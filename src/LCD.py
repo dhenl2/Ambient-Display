@@ -11,7 +11,7 @@ def init_lcd():
     devices = i2c.scan()
     if len(devices) == 0:
         print("No I2C devices!")
-        exit(1)
+        return
     device_addr = 0x27
     lcd = I2cLcd(i2c, device_addr, 2, 16)
     lcd.putstr("Ready...")

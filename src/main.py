@@ -31,15 +31,11 @@ def test_server():
 
 if __name__ == '__main__':
     while True:
-        # print("about to run circle")
-        # run_circle(display_pin)
-        # run_sequence(display_pin)
-        # run_line_animation(display_pin, 0.8)
-        # read_pin(microphone_pin)
-        # read_freq(microphone_pin)
         lcd = init_lcd()
+        if lcd is None:
+            exit(1)
         sensor = HCSR04(trigger_pin=1, echo_pin=3)
         while True:
             distance = sensor.distance_cm()
-            display_text(lcd, "Distance: " + distance)
+            display_text(lcd, "Distance: " + str(int(distance)) + "cm")
             time.sleep(0.5)
