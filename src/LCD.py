@@ -5,8 +5,8 @@ from esp8266_i2c_lcd import I2cLcd
 
 
 def lcd_test():
-    sda = machine.Pin(5)
-    scl = machine.Pin(4)
+    sda = machine.Pin(4)
+    scl = machine.Pin(5)
     i2c = machine.I2C(sda=sda, scl=scl)
     devices = i2c.scan()
     device_addr = 0x27
