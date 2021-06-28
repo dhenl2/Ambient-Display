@@ -9,6 +9,9 @@ def lcd_test():
     scl = machine.Pin(5)
     i2c = machine.I2C(sda=sda, scl=scl)
     devices = i2c.scan()
+    if len(devices) == 0:
+        print("No I2C devices!")
+        exit(1)
     device_addr = 0x27
     lcd = I2cLcd(i2c, device_addr, 2, 16)
     lcd.clear()
