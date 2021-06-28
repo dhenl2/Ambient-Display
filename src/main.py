@@ -4,7 +4,8 @@
 import time
 from machine import UART, Pin
 import socket
-from LCD import lcd_test
+from LCD import init_lcd, display_text
+from hcsr04 import HCSR04
 
 display_pin = Pin(4)        # D2
 microphone_pin = Pin(5, Pin.IN)     # D1
@@ -36,4 +37,9 @@ if __name__ == '__main__':
         # run_line_animation(display_pin, 0.8)
         # read_pin(microphone_pin)
         # read_freq(microphone_pin)
-        lcd_test()
+        lcd = init_lcd()
+        sensor = HCSR04(trigger_pin=1, echo_pin=3)
+        while True:
+            distance = sensor.distance_cm()
+            display_text(lcd, "Distance: " + distance)
+            time.sleep(0.5)

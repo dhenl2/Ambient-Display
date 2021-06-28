@@ -4,7 +4,7 @@ from lcd_api import LcdApi
 from esp8266_i2c_lcd import I2cLcd
 
 
-def lcd_test():
+def init_lcd():
     sda = machine.Pin(4)
     scl = machine.Pin(5)
     i2c = machine.I2C(sda=sda, scl=scl)
@@ -14,6 +14,13 @@ def lcd_test():
         exit(1)
     device_addr = 0x27
     lcd = I2cLcd(i2c, device_addr, 2, 16)
+    lcd.putstr("Ready...")
+    time.sleep(2)
     lcd.clear()
-    lcd.putstr("We can now start")
+    return lcd
+
+
+def display_text(lcd, text):
+    lcd.clear()
+    lcd.putstr(text)
 
