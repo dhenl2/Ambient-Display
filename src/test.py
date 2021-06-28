@@ -19,7 +19,7 @@ def flash(timer, led):
     led.on()
 
 
-def neo_pixel_test():
+def neo_pixel_test(np):
     # np = neopixel.NeoPixel(pin_pixels, 24)
     for pixel in range(0, 24):
         np[pixel] = (255, 0, 0)
@@ -40,4 +40,4 @@ def flash_test():
 if __name__ == '__main__':
     while True:
         # neo_pixel_test()
-        run_circle()
+        # run_circle()

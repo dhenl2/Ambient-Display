@@ -1,9 +1,10 @@
-from display import run_circle, run_sequence, run_line_animation
-from vibration import write_msg
-from microphone import read_pin, read_freq
+# from display import run_circle, run_sequence, run_line_animation
+# from vibration import write_msg
+# from microphone import read_pin, read_freq
 import time
 from machine import UART, Pin
 import socket
+from LCD import lcd_test
 
 display_pin = Pin(4)        # D2
 microphone_pin = Pin(5, Pin.IN)     # D1
@@ -23,8 +24,8 @@ def test_server():
             while True:
                 data = client.recv(1024)
                 if not data:
-                    break;
-                client.send("received your message boss")
+                    break
+                # client.send(byte("received your message boss", "utf-8"))
 
 
 if __name__ == '__main__':
@@ -32,6 +33,7 @@ if __name__ == '__main__':
         # print("about to run circle")
         # run_circle(display_pin)
         # run_sequence(display_pin)
-        run_line_animation(display_pin, 0.8)
+        # run_line_animation(display_pin, 0.8)
         # read_pin(microphone_pin)
         # read_freq(microphone_pin)
+        lcd_test()
