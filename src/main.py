@@ -1,11 +1,8 @@
 # from display import run_circle, run_sequence, run_line_animation
 # from vibration import write_msg
 # from microphone import read_pin, read_freq
-import time
-from machine import UART, Pin
+from machine import Pin
 import socket
-from LCD import init_lcd, display_text
-from hcsr04 import HCSR04
 
 display_pin = Pin(4)        # D2
 microphone_pin = Pin(5, Pin.IN)     # D1
@@ -30,12 +27,17 @@ def test_server():
 
 
 if __name__ == '__main__':
-    while True:
-        lcd = init_lcd()
-        if lcd is None:
-            exit(1)
-        sensor = HCSR04(trigger_pin=1, echo_pin=3)
-        while True:
-            distance = sensor.distance_cm()
-            display_text(lcd, "Distance: " + str(int(distance)) + "cm")
-            time.sleep(0.5)
+    pass
+    # lcd = init_lcd()
+    # if lcd is None:
+    #     print("no LCD")
+    #     exit(1)
+    # sensor_right = HCSR04(trigger_pin=5, echo_pin=4)
+    # sensor_left = HCSR04(trigger_pin=14, echo_pin=12)
+    # while True:
+    #     print("Distance_left: " + str(int(sensor_left.distance_cm())) + "cm\n" +
+    #           "Distance_right: " + str(int(sensor_right.distance_cm())) + "cm")
+        # display_text(lcd, "Left: " + str(int(sensor_left.distance_cm())) + "cm")
+        # lcd.move_to(0, 1)
+        # display_text(lcd, "Right: " + str(int(sensor_right.distance_cm())) + "cm", False)
+        # time.sleep(0.5)
