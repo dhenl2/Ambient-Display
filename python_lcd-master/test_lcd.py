@@ -50,7 +50,7 @@ class LcdSim(LcdApi):
         self.addr = 0
 
     def display_lines(self):
-        """Returns the DDRAM as an array of display lines."""
+        """Returns the DDRAM as an array of display_src lines."""
         lines = []
         for i in range(self.num_lines):
             addr = self.addr_for_line(i)

@@ -1,6 +1,6 @@
-# from display import run_circle, run_sequence, run_line_animation
+# from display_src import run_circle, run_sequence, run_line_animation
 # from vibration import write_msg
-# from microphone import read_pin, read_freq
+# from microphone_src import read_pin, read_freq
 from machine import Pin
 import socket
 

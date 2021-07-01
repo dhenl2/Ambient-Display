@@ -63,16 +63,16 @@ def test_main():
             print("Turning backlight on")
             lcd.backlight_on()
         if count % 10 == 5:
-            print("Turning display off")
+            print("Turning display_src off")
             lcd.display_off()
         if count % 10 == 6:
-            print("Turning display on")
+            print("Turning display_src on")
         if count % 10 == 7:
-            print("Turning display & backlight off")
+            print("Turning display_src & backlight off")
             lcd.backlight_off()
             lcd.display_off()
         if count % 10 == 8:
-            print("Turning display & backlight back on")
+            print("Turning display_src & backlight back on")
             lcd.backlight_on()
             lcd.display_on()
 

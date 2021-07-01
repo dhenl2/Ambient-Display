@@ -9,9 +9,9 @@
   </component>
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/display" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/display_src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/door_sensor_src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/microphone" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/microphone_src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
