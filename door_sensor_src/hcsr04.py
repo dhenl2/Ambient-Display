@@ -1,4 +1,5 @@
-import machine, time
+import machine
+import time
 from machine import Pin
 
 __version__ = '0.2.0'
