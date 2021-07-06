@@ -3,11 +3,12 @@ import utime
 import math
 import gc
 from machine import Pin
+import uasyncio as thread
 
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
 LED = Pin(2, Pin.OUT)
-VERBOSE = False
+VERBOSE = True
 
 class Time:
     def __init__(self, start_time):
@@ -24,7 +25,7 @@ class Time:
         return (self.curr_time - self.start_time) / 1000
 
 class Sensor:
-    def __init__(self, sensor, name):
+    def __init__(self, sensor, lock, name):
         self.name = name
         self.sensor = sensor
         self.average = 0
@@ -33,12 +34,17 @@ class Sensor:
         self.found_time = None
         self.error_count = 0
         self.calibration_attempt = 0
+        self.distance = None
+        self.thread_id = None
+        self.lock = lock
 
     def reset_found(self):
+        self.lock.aquire()
         if VERBOSE:
             print("Resetting found")
         self.found = False
         self.found_time = None
+        self.lock.release()
 
     def get_found_dt(self):
         curr_time = utime.ticks_ms()
@@ -63,13 +69,16 @@ class Sensor:
         print("Averaged: " + str(self.average) + " Std: " + str(self.std))
         LED.on()
 
-    def someone_found(self, distance):
+    def someone_found(self):
         # if distance < (self.calibrated - self.std):
-        if distance < (self.average - 10) and distance != 0:
+        if self.distance < (self.average - 10) and self.distance != 0:
+            self.lock.aquire()
             if VERBOSE:
-                print("someone found with " + str(distance) + " < (" + str(self.average) + " - 10)")
+                print("Someone found at " + self.name + " @ " + str(self.found_time) + "ms")
             self.found = True
             self.found_time = utime.ticks_ms()
+            self.lock.release()
+
 
     def get_distance(self, raw=False):
         distance = self.sensor.distance_cm()
@@ -105,9 +114,9 @@ def check_for_passers(left_sensor, right_sensor):
     if left_sensor.found and right_sensor.found:
         # check which direction they've come
         if left_sensor.found_time < right_sensor.found_time:
-            print("Someone came in")
+            print("Someone came from the left")
         elif right_sensor.found_time > left_sensor.found_time:
-            print("Someone left")
+            print("Someone came from the right")
         elif left_sensor.found_time == right_sensor.found_time:
             # ignore
             pass
@@ -124,23 +133,28 @@ def check_for_passers(left_sensor, right_sensor):
 
 
 def write_data(file, left_sensor, right_sensor, time, header=False):
-    left_distance = left_sensor.get_distance()
-    right_distance = right_sensor.get_distance()
+    # left_sensor.distance = left_sensor.get_distance()
+    # right_sensor.distance = right_sensor.get_distance()
 
     check_for_passers(left_sensor, right_sensor)
+    left_distance = right_distance = None
+    if left_sensor.distance is not None:
+        left_distance = left_sensor.distance
+    if right_sensor.distance is not None:
+        right_distance = right_sensor.distance
 
     # Check if distance is invalid or check if someone is passing
     if left_distance is None:
         left_distance = ""
     else:
         left_distance = int(left_distance)
-        left_sensor.someone_found(left_distance)
+        # left_sensor.someone_found(left_distance)
 
     if right_distance is None:
         right_distance = ""
     else:
         right_distance = int(right_distance)
-        right_sensor.someone_found(right_distance)
+        # right_sensor.someone_found(right_distance)
 
     data = str(time.get_elapsed()) + "," + str(left_sensor.average) + "," + str(left_distance) + "," + \
            str(right_sensor.average) + "," + str(right_distance) + "\n"
@@ -148,15 +162,26 @@ def write_data(file, left_sensor, right_sensor, time, header=False):
         file.write("time (s),Left (avg),Left,Right (avg),Right\n")
     file.write(data)
 
+
+def thread_get_distance(sensor):
+    while True:
+        sensor.distance = sensor.get_distance()
+        sensor.someone_found()
+
+
 def main():
     garbage = gc
     frequency = 30 # hz
-    sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left")
-    sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right")
-    sensor_left.calibrate(frequency, 20)
-    sensor_right.calibrate(frequency, 20)
+    sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left", thread.allocate_lock())
+    sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right", thread.allocate_lock())
+    sensor_left.calibrate(frequency, 10)
+    sensor_right.calibrate(frequency, 10)
     garbage.collect()
     garbage.enable()
+
+    # threads
+    sensor_left.thread_id = thread.start_new_thread(thread_get_distance, (sensor_left, None))
+    sensor_right.thread_id = thread.start_new_thread(thread_get_distance, (sensor_right, None))
 
     # record distance
     file = open("record.csv", "w")
