@@ -2,18 +2,12 @@ from hcsr04 import HCSR04
 import utime
 import math
 import gc
+from machine import Pin
 
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
-
-def get_std(trials):
-    count = len(trials)
-    mean = sum(trials) / count
-    variance = 0
-    for x in trials:
-        variance += abs(x - mean) / count
-    std = math.sqrt(variance)
-    return std
+LED = Pin(2, Pin.OUT)
+VERBOSE = False
 
 class Time:
     def __init__(self, start_time):
@@ -38,10 +32,11 @@ class Sensor:
         self.found = False
         self.found_time = None
         self.error_count = 0
-        # self.calibration_attempt = 0
+        self.calibration_attempt = 0
 
     def reset_found(self):
-        print("Resetting found")
+        if VERBOSE:
+            print("Resetting found")
         self.found = False
         self.found_time = None
 
@@ -49,12 +44,13 @@ class Sensor:
         curr_time = utime.ticks_ms()
         return (curr_time - self.found_time) / 1000
 
-    def calibrate(self, freq, verbose=False):
+    def calibrate(self, freq, duration, verbose=False):
         print("Calibrating " + self.name + " at " + str(freq) + "Hz")
+        LED.off()
         trials = list()
         time = Time(utime.ticks_ms())
         time.prev_time = time.start_time
-        while time.get_elapsed() < 10:
+        while time.get_elapsed() < duration:
             if time.get_dt() > (1 / freq):
                 trials.append(self.sensor.distance_cm())
                 time.prev_time = utime.ticks_ms()
@@ -65,36 +61,44 @@ class Sensor:
         self.average = int(sum(trials) / len(trials))
         self.std = get_std(trials)
         print("Averaged: " + str(self.average) + " Std: " + str(self.std))
-        # if self.calibration_attempt < 5 and self.std > STD_THRESHOLD:
-        #     print("Attempt to recalibrate")
-        #     self.calibration_attempt += 1
-        #     self.calibrate()
+        LED.on()
 
     def someone_found(self, distance):
         # if distance < (self.calibrated - self.std):
         if distance < (self.average - 10) and distance != 0:
-            print("someone found with " + str(distance) + " < (" + str(self.average) + " - 10)")
+            if VERBOSE:
+                print("someone found with " + str(distance) + " < (" + str(self.average) + " - 10)")
             self.found = True
             self.found_time = utime.ticks_ms()
 
     def get_distance(self, raw=False):
         distance = self.sensor.distance_cm()
         if not raw:
-            if (distance > (self.average + (self.std * 2))) or (distance == 0):
-                print("invalid sensor data for " + self.name)
-                print(str(distance) + " > (" + str(self.average) + " + " + str(self.std * 2) + ") or " + str(
-                    distance) + " == 0")
+            if (distance > (self.average + (self.std * 3))) or (distance == 0):
+                if VERBOSE:
+                    print("invalid sensor data for " + self.name)
+                    print(str(distance) + " > (" + str(self.average) + " + " + str(self.std * 2) + ") or " + str(
+                            distance) + " == 0")
                 self.error_count += 1
                 # ignore invalid result
                 #   - larger than 68% of results above the mean which is most likely an error
                 #   - or just 0 which is defs an error
                 # if error reoccurring attempt to recalibrate
-                # if self.error_count > 5:
-                #     self.calibrate(True)
-                #     self.error_count = 0
-                # return None
+                if self.error_count > 5:
+                    self.calibrate(30, 5)
+                    self.error_count = 0
+                return None
         self.error_count = 0
         return distance
+
+def get_std(trials):
+    count = len(trials)
+    mean = sum(trials) / count
+    variance = 0
+    for x in trials:
+        variance += abs(x - mean) / count
+    std = math.sqrt(variance)
+    return std
 
 def check_for_passers(left_sensor, right_sensor):
     # check if someone has passed
@@ -146,8 +150,8 @@ def main():
     frequency = 30 # hz
     sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left")
     sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right")
-    sensor_left.calibrate(frequency)
-    sensor_right.calibrate(frequency)
+    sensor_left.calibrate(frequency, 10)
+    sensor_right.calibrate(frequency, 10)
     garbage.collect()
     garbage.enable()
 
