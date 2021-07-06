@@ -84,7 +84,7 @@ class Sensor:
                 #   - larger than 68% of results above the mean which is most likely an error
                 #   - or just 0 which is defs an error
                 # if error reoccurring attempt to recalibrate
-                if self.error_count > 5:
+                if self.error_count > 10:
                     self.calibrate(30, 5)
                     self.error_count = 0
                 return None
@@ -108,6 +108,9 @@ def check_for_passers(left_sensor, right_sensor):
             print("Someone came in")
         elif right_sensor.found_time > left_sensor.found_time:
             print("Someone left")
+        elif left_sensor.found_time == right_sensor.found_time:
+            # ignore
+            pass
         else:
             print("We've got a wild one boys")
             print(str(right_sensor.found_time) + " ? " + str(left_sensor.found_time))
@@ -150,8 +153,8 @@ def main():
     frequency = 30 # hz
     sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left")
     sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right")
-    sensor_left.calibrate(frequency, 10)
-    sensor_right.calibrate(frequency, 10)
+    sensor_left.calibrate(frequency, 20)
+    sensor_right.calibrate(frequency, 20)
     garbage.collect()
     garbage.enable()
 
