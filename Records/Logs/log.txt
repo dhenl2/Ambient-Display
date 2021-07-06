@@ -1,0 +1,99 @@
+Took 10.0s for 1000 trials
+Performed at 24Hz
+Averaged: 82 Std: 0.549236
+Calibrating right at 30Hz
+Took 10.0s for 1000 trials
+Performed at 24Hz
+Averaged: 81 Std: 0.508752
+Starting Recording Session at 30Hz
+invalid sensor data for right
+82.3368 > (81 + 1.0175) or 82.3368 == 0
+invalid sensor data for right
+82.3024 > (81 + 1.0175) or 82.3024 == 0
+invalid sensor data for right
+82.268 > (81 + 1.0175) or 82.268 == 0
+10.0% @ 7.15s
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+invalid sensor data for right
+82.268 > (81 + 1.0175) or 82.268 == 0
+20.0% @ 14.153s
+30.0% @ 21.148s
+40.0% @ 28.102s
+invalid sensor data for right
+82.3539 > (81 + 1.0175) or 82.3539 == 0
+50.0% @ 35.122s
+someone found with 39 < (81 - 10)
+someone found with 59 < (82 - 10)
+someone found with 33 < (81 - 10)
+invalid sensor data for right
+88.3161 > (81 + 1.0175) or 88.3161 == 0
+Someone came in
+Resetting found
+Resetting found
+someone found with 31 < (82 - 10)
+invalid sensor data for right
+218.436 > (81 + 1.0175) or 218.436 == 0
+invalid sensor data for left
+84.3643 > (82 + 1.09847) or 84.3643 == 0
+invalid sensor data for right
+350.361 > (81 + 1.0175) or 350.361 == 0
+someone found with 39 < (82 - 10)
+someone found with 38 < (81 - 10)
+Someone came in
+Resetting found
+Resetting found
+someone found with 36 < (82 - 10)
+someone found with 40 < (82 - 10)
+invalid sensor data for left
+83.7285 > (82 + 1.09847) or 83.7285 == 0
+invalid sensor data for right
+82.3539 > (81 + 1.0175) or 82.3539 == 0
+invalid sensor data for right
+82.3368 > (81 + 1.0175) or 82.3368 == 0
+Resetting found
+60.0% @ 42.281s
+invalid sensor data for right
+82.3711 > (81 + 1.0175) or 82.3711 == 0
+invalid sensor data for right
+82.3196 > (81 + 1.0175) or 82.3196 == 0
+invalid sensor data for left
+83.3333 > (82 + 1.09847) or 83.3333 == 0
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+someone found with 42 < (81 - 10)
+invalid sensor data for left
+94.5533 > (82 + 1.09847) or 94.5533 == 0
+invalid sensor data for right
+84.5704 > (81 + 1.0175) or 84.5704 == 0
+invalid sensor data for right
+82.2165 > (81 + 1.0175) or 82.2165 == 0
+invalid sensor data for right
+82.1993 > (81 + 1.0175) or 82.1993 == 0
+Resetting found
+invalid sensor data for right
+82.2509 > (81 + 1.0175) or 82.2509 == 0
+invalid sensor data for right
+82.1993 > (81 + 1.0175) or 82.1993 == 0
+70.0% @ 49.615s
+invalid sensor data for right
+82.2165 > (81 + 1.0175) or 82.2165 == 0
+invalid sensor data for right
+82.2509 > (81 + 1.0175) or 82.2509 == 0
+80.0% @ 56.608s
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+invalid sensor data for right
+82.2509 > (81 + 1.0175) or 82.2509 == 0
+90.0% @ 63.658s
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+invalid sensor data for right
+82.2852 > (81 + 1.0175) or 82.2852 == 0
+invalid sensor data for right
+82.3196 > (81 + 1.0175) or 82.3196 == 0
+Ending Recording Session

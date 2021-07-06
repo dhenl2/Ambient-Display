@@ -1,6 +1,7 @@
 from hcsr04 import HCSR04
 import utime
 import math
+import gc
 
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
@@ -14,6 +15,20 @@ def get_std(trials):
     std = math.sqrt(variance)
     return std
 
+class Time:
+    def __init__(self, start_time):
+        self.prev_time = 0
+        self.curr_time = 0
+        self.start_time = start_time
+
+    def get_dt(self):
+        self.curr_time = utime.ticks_ms()
+        return (self.curr_time - self.prev_time) / 1000
+
+    def get_elapsed(self):
+        self.curr_time = utime.ticks_ms()
+        return (self.curr_time - self.start_time) / 1000
+
 class Sensor:
     def __init__(self, sensor, name):
         self.name = name
@@ -22,9 +37,11 @@ class Sensor:
         self.std = 0
         self.found = False
         self.found_time = None
+        self.error_count = 0
         # self.calibration_attempt = 0
 
     def reset_found(self):
+        print("Resetting found")
         self.found = False
         self.found_time = None
 
@@ -32,14 +49,19 @@ class Sensor:
         curr_time = utime.ticks_ms()
         return (curr_time - self.found_time) / 1000
 
-    def calibrate(self):
-        print("Calibrating " + self.name)
+    def calibrate(self, freq, verbose=False):
+        print("Calibrating " + self.name + " at " + str(freq) + "Hz")
         trials = list()
-        time_start = utime.ticks_ms()
-        for i in range(1000):
-            trials.append(self.sensor.distance_cm())
-        time_end = utime.ticks_ms()
-        print("Took " + str((time_end - time_start)/1000) + "s for 1000 trials")
+        time = Time(utime.ticks_ms())
+        time.prev_time = time.start_time
+        while time.get_elapsed() < 10:
+            if time.get_dt() > (1 / freq):
+                trials.append(self.sensor.distance_cm())
+                time.prev_time = utime.ticks_ms()
+        print("Took " + str(time.get_elapsed()) + "s for 1000 trials")
+        print("Performed at " + str(int(len(trials) / time.get_elapsed())) + "Hz")
+        if verbose:
+            print(str(trials))
         self.average = int(sum(trials) / len(trials))
         self.std = get_std(trials)
         print("Averaged: " + str(self.average) + " Std: " + str(self.std))
@@ -62,10 +84,16 @@ class Sensor:
                 print("invalid sensor data for " + self.name)
                 print(str(distance) + " > (" + str(self.average) + " + " + str(self.std * 2) + ") or " + str(
                     distance) + " == 0")
+                self.error_count += 1
                 # ignore invalid result
                 #   - larger than 68% of results above the mean which is most likely an error
                 #   - or just 0 which is defs an error
-                return None
+                # if error reoccurring attempt to recalibrate
+                # if self.error_count > 5:
+                #     self.calibrate(True)
+                #     self.error_count = 0
+                # return None
+        self.error_count = 0
         return distance
 
 def check_for_passers(left_sensor, right_sensor):
@@ -81,17 +109,16 @@ def check_for_passers(left_sensor, right_sensor):
             print(str(right_sensor.found_time) + " ? " + str(left_sensor.found_time))
         left_sensor.reset_found()
         right_sensor.reset_found()
-    else:
-        # check if false reading given or someone attempted to pass in but did not go all the way in
-        if left_sensor.get_found_dt() > FOUND_TIMEOUT:
-            left_sensor.reset_found()
-        if right_sensor.get_found_dt() > FOUND_TIMEOUT:
-            right_sensor.reset_found()
+    # check if false reading given or someone attempted to pass in but did not go all the way in
+    if left_sensor.found and left_sensor.get_found_dt() > FOUND_TIMEOUT:
+        left_sensor.reset_found()
+    if right_sensor.found and right_sensor.get_found_dt() > FOUND_TIMEOUT:
+        right_sensor.reset_found()
 
 
-def write_data(file, left_sensor, right_sensor, start_time, header=False):
-    left_distance = left_sensor.get_distance(True)
-    right_distance = right_sensor.get_distance(True)
+def write_data(file, left_sensor, right_sensor, time, header=False):
+    left_distance = left_sensor.get_distance()
+    right_distance = right_sensor.get_distance()
 
     check_for_passers(left_sensor, right_sensor)
 
@@ -108,30 +135,44 @@ def write_data(file, left_sensor, right_sensor, start_time, header=False):
         right_distance = int(right_distance)
         right_sensor.someone_found(right_distance)
 
-    time_diff = utime.ticks_ms() - start_time
-    data = str(time_diff) + "," + str(left_sensor.average) + "," + str(left_distance) + "," + \
+    data = str(time.get_elapsed()) + "," + str(left_sensor.average) + "," + str(left_distance) + "," + \
            str(right_sensor.average) + "," + str(right_distance) + "\n"
     if header:
         file.write("time (s),Left (avg),Left,Right (avg),Right\n")
     file.write(data)
 
 def main():
+    garbage = gc
+    frequency = 30 # hz
     sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left")
     sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right")
-    sensor_left.calibrate()
-    sensor_right.calibrate()
+    sensor_left.calibrate(frequency)
+    sensor_right.calibrate(frequency)
+    garbage.collect()
+    garbage.enable()
 
     # record distance
     file = open("record.csv", "w")
-    print("Starting Recording Session")
+    print("Starting Recording Session at " + str(frequency) + "Hz")
     count = 0
-    start_time = utime.ticks_ms()
+    time = Time(utime.ticks_ms())
+    time.start_time = utime.ticks_ms()
+    time.prev_time = time.start_time
     while count < 1000:
-        if count == 0:
-            write_data(file, sensor_left, sensor_right, start_time, True)
-        else:
-            write_data(file, sensor_left, sensor_right, start_time)
-        count += 1
+        if time.get_dt() > (1 / frequency):
+            # show progress
+            if count != 0 and count % 100 == 0:
+                percentage = float(count) / 10
+                percentage = str(percentage)
+                print("{0}% @ {1}s".format(str(percentage), time.get_elapsed()))
+                # print(percentage + "% @ " + time.get_elapsed() + "s")
+
+            if count == 0:
+                write_data(file, sensor_left, sensor_right, time, True)
+            else:
+                write_data(file, sensor_left, sensor_right, time)
+            time.prev_time = utime.ticks_ms()
+            count += 1
     file.close()
     print("Ending Recording Session")
 
