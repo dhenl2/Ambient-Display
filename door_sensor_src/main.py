@@ -3,7 +3,7 @@ import utime
 import math
 import gc
 from machine import Pin
-import uasyncio as thread
+import uasyncio
 
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
@@ -25,9 +25,10 @@ class Time:
         return (self.curr_time - self.start_time) / 1000
 
 class Sensor:
-    def __init__(self, sensor, lock, name):
-        self.name = name
+    def __init__(self, queue, sensor, name):
+        self.queue = queue
         self.sensor = sensor
+        self.name = name
         self.average = 0
         self.std = 0
         self.found = False
@@ -35,22 +36,19 @@ class Sensor:
         self.error_count = 0
         self.calibration_attempt = 0
         self.distance = None
-        self.thread_id = None
-        self.lock = lock
+
 
     def reset_found(self):
-        self.lock.aquire()
         if VERBOSE:
             print("Resetting found")
         self.found = False
         self.found_time = None
-        self.lock.release()
 
     def get_found_dt(self):
         curr_time = utime.ticks_ms()
         return (curr_time - self.found_time) / 1000
 
-    def calibrate(self, freq, duration, verbose=False):
+    async def calibrate(self,freq, duration, verbose=False):
         print("Calibrating " + self.name + " at " + str(freq) + "Hz")
         LED.off()
         trials = list()
@@ -68,19 +66,18 @@ class Sensor:
         self.std = get_std(trials)
         print("Averaged: " + str(self.average) + " Std: " + str(self.std))
         LED.on()
+        self.queue.task_done()
 
     def someone_found(self):
         # if distance < (self.calibrated - self.std):
         if self.distance < (self.average - 10) and self.distance != 0:
-            self.lock.aquire()
             if VERBOSE:
                 print("Someone found at " + self.name + " @ " + str(self.found_time) + "ms")
             self.found = True
             self.found_time = utime.ticks_ms()
-            self.lock.release()
 
 
-    def get_distance(self, raw=False):
+    async def get_distance(self, raw=False):
         distance = self.sensor.distance_cm()
         if not raw:
             if (distance > (self.average + (self.std * 3))) or (distance == 0):
@@ -90,11 +87,11 @@ class Sensor:
                             distance) + " == 0")
                 self.error_count += 1
                 # ignore invalid result
-                #   - larger than 68% of results above the mean which is most likely an error
+                #   - larger than 3 standard deviations of results above the mean which is most likely an error
                 #   - or just 0 which is defs an error
                 # if error reoccurring attempt to recalibrate
                 if self.error_count > 10:
-                    self.calibrate(30, 5)
+                    await self.calibrate(30, 5)
                     self.error_count = 0
                 return None
         self.error_count = 0
@@ -133,9 +130,6 @@ def check_for_passers(left_sensor, right_sensor):
 
 
 def write_data(file, left_sensor, right_sensor, time, header=False):
-    # left_sensor.distance = left_sensor.get_distance()
-    # right_sensor.distance = right_sensor.get_distance()
-
     check_for_passers(left_sensor, right_sensor)
     left_distance = right_distance = None
     if left_sensor.distance is not None:
@@ -143,18 +137,16 @@ def write_data(file, left_sensor, right_sensor, time, header=False):
     if right_sensor.distance is not None:
         right_distance = right_sensor.distance
 
-    # Check if distance is invalid or check if someone is passing
+    # Check if distance is invalid
     if left_distance is None:
         left_distance = ""
     else:
         left_distance = int(left_distance)
-        # left_sensor.someone_found(left_distance)
 
     if right_distance is None:
         right_distance = ""
     else:
         right_distance = int(right_distance)
-        # right_sensor.someone_found(right_distance)
 
     data = str(time.get_elapsed()) + "," + str(left_sensor.average) + "," + str(left_distance) + "," + \
            str(right_sensor.average) + "," + str(right_distance) + "\n"
@@ -163,26 +155,12 @@ def write_data(file, left_sensor, right_sensor, time, header=False):
     file.write(data)
 
 
-def thread_get_distance(sensor):
+async def thread_get_distance(sensor):
     while True:
-        sensor.distance = sensor.get_distance()
+        sensor.distance = await sensor.get_distance()
         sensor.someone_found()
 
-
-def main():
-    garbage = gc
-    frequency = 30 # hz
-    sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left", thread.allocate_lock())
-    sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right", thread.allocate_lock())
-    sensor_left.calibrate(frequency, 10)
-    sensor_right.calibrate(frequency, 10)
-    garbage.collect()
-    garbage.enable()
-
-    # threads
-    sensor_left.thread_id = thread.start_new_thread(thread_get_distance, (sensor_left, None))
-    sensor_right.thread_id = thread.start_new_thread(thread_get_distance, (sensor_right, None))
-
+async def record_log(duration, frequency, sensor_left, sensor_right):
     # record distance
     file = open("record.csv", "w")
     print("Starting Recording Session at " + str(frequency) + "Hz")
@@ -190,7 +168,7 @@ def main():
     time = Time(utime.ticks_ms())
     time.start_time = utime.ticks_ms()
     time.prev_time = time.start_time
-    while count < 1000:
+    while time.get_elapsed() < duration:
         if time.get_dt() > (1 / frequency):
             # show progress
             if count != 0 and count % 100 == 0:
@@ -207,6 +185,30 @@ def main():
             count += 1
     file.close()
     print("Ending Recording Session")
+    return
+
+def main():
+    garbage = gc
+    frequency = 30 # hz
+    q = uasyncio.Queue()
+    sensor_left = Sensor(q, HCSR04(trigger_pin=14, echo_pin=12), "left")
+    sensor_right = Sensor(q, HCSR04(trigger_pin=5, echo_pin=4), "right")
+    cal_left = uasyncio.create_task(sensor_left.calibrate(frequency, 10))
+    cal_right = uasyncio.create_task(sensor_right.calibrate(frequency, 10))
+    await uasyncio.gather([cal_left, cal_right])
+    await q.join()
+    garbage.collect()
+    garbage.enable()
+
+    # threads
+    left = uasyncio.create_task(thread_get_distance(sensor_left))
+    right = uasyncio.create_task(thread_get_distance(sensor_right))
+    record = uasyncio.create_task(record_log(30, 30, sensor_left, sensor_right))
+    await uasyncio.gather([left, right, record])
+    uasyncio.wait_for(record)
+    print("Leaving Main()")
+    return
+
 
 if __name__ == "__main__":
     main()
