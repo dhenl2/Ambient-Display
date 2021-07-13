@@ -9,7 +9,7 @@ from uasyncio import Lock
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
 LED = Pin(2, Pin.OUT)
-VERBOSE = True
+VERBOSE = False
 
 class Time:
     def __init__(self, start_time):
@@ -94,11 +94,12 @@ class Sensor:
                 #   - larger than 3 standard deviations of results above the mean which is most likely an error
                 #   - or just 0 which is defs an error
                 # if error reoccurring attempt to recalibrate
+                #   - could be due to an object being placed in the sensors perception
                 if self.error_count > 10:
                     self.calibrate(30, 5)
                     self.error_count = 0
-
                 return None
+
         self.error_count = 0
         return distance
 
@@ -135,8 +136,7 @@ async def check_for_passers(left_sensor, right_sensor, lock):
         right_sensor.reset_found()
     lock.release()
 
-async def write_data(file, left_sensor, right_sensor, time, lock, header=False):
-    await check_for_passers(left_sensor, right_sensor, lock)
+async def write_data(file, left_sensor, right_sensor, time, header=False):
     left_distance = right_distance = None
     if left_sensor.distance is not None:
         left_distance = left_sensor.distance
@@ -160,15 +160,12 @@ async def write_data(file, left_sensor, right_sensor, time, lock, header=False):
         file.write("time (s),Left (avg),Left,Right (avg),Right\n")
     file.write(data)
 
-
 async def thread_get_distance(sensor, frequency):
     time = Time(utime.ticks_ms())
     time.prev_time = utime.ticks_ms()
     while True:
-        # print(sensor.name + " sensor waiting...")
         await uasyncio.sleep_ms(0)
         if time.get_dt() > (1/frequency):
-            # print(sensor.name + "sensor getting distance")
             sensor.distance = sensor.get_distance(raw=True)
             if not sensor.found and (utime.ticks_ms() > sensor.start_looking):
                 await sensor.someone_found()
@@ -192,10 +189,11 @@ async def record_log(duration, frequency, sensor_left, sensor_right, lock):
                 print("{0}% @ {1}s".format(str(percentage), time.get_elapsed()))
                 # print(percentage + "% @ " + time.get_elapsed() + "s")
 
+            await check_for_passers(sensor_left, sensor_right, lock)
             if count == 0:
-                await write_data(file, sensor_left, sensor_right, time, lock, header=True)
+                await write_data(file, sensor_left, sensor_right, time, header=True)
             else:
-                await write_data(file, sensor_left, sensor_right, time, lock)
+                await write_data(file, sensor_left, sensor_right, time)
             time.prev_time = utime.ticks_ms()
             count += 1
     file.close()
@@ -213,7 +211,6 @@ def connect_to_network(ssid, password):
     else:
         print("Cannot connect to " + ssid)
         return False
-
 
 def install_asyncio():
     if connect_to_network("EXETEL E84EE4 2.4G", "HDhuZcsS"):
@@ -237,8 +234,6 @@ async def main():
     loop = uasyncio.get_event_loop()
     loop.create_task(thread_get_distance(sensor_left, frequency))
     loop.create_task(thread_get_distance(sensor_right, frequency))
-    # loop.create_task(record_log(30, 30, sensor_left, sensor_right, lock))
-    # loop.run_forever()
     loop.run_until_complete(record_log(30, 30, sensor_left, sensor_right, lock))
     print("Leaving main()")
     return
