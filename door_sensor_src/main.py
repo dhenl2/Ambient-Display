@@ -4,6 +4,7 @@ import math
 import gc
 from machine import Pin
 import uasyncio
+from uasyncio import Lock
 
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
@@ -25,30 +26,34 @@ class Time:
         return (self.curr_time - self.start_time) / 1000
 
 class Sensor:
-    def __init__(self, queue, sensor, name):
-        self.queue = queue
+    def __init__(self, sensor, name, lock):
         self.sensor = sensor
         self.name = name
+        self.lock = lock
+        # calibration variables
         self.average = 0
         self.std = 0
-        self.found = False
-        self.found_time = None
         self.error_count = 0
         self.calibration_attempt = 0
+        # object detection
+        self.found = False
+        self.found_time = None
         self.distance = None
-
+        self.start_looking = utime.ticks_ms()
 
     def reset_found(self):
         if VERBOSE:
-            print("Resetting found")
+            print(self.name + " sensor resetting found")
         self.found = False
         self.found_time = None
+        # used to delay looking for someone passing as they pass
+        self.start_looking = utime.ticks_ms() + 1000
 
     def get_found_dt(self):
         curr_time = utime.ticks_ms()
         return (curr_time - self.found_time) / 1000
 
-    async def calibrate(self,freq, duration, verbose=False):
+    def calibrate(self,freq, duration, verbose=False):
         print("Calibrating " + self.name + " at " + str(freq) + "Hz")
         LED.off()
         trials = list()
@@ -58,7 +63,7 @@ class Sensor:
             if time.get_dt() > (1 / freq):
                 trials.append(self.sensor.distance_cm())
                 time.prev_time = utime.ticks_ms()
-        print("Took " + str(time.get_elapsed()) + "s for 1000 trials")
+        print("Took " + str(time.get_elapsed()) + "s for " + str(len(trials)) +" trials")
         print("Performed at " + str(int(len(trials) / time.get_elapsed())) + "Hz")
         if verbose:
             print(str(trials))
@@ -66,18 +71,17 @@ class Sensor:
         self.std = get_std(trials)
         print("Averaged: " + str(self.average) + " Std: " + str(self.std))
         LED.on()
-        self.queue.task_done()
 
-    def someone_found(self):
-        # if distance < (self.calibrated - self.std):
+    async def someone_found(self):
+        await self.lock.acquire()
         if self.distance < (self.average - 10) and self.distance != 0:
-            if VERBOSE:
-                print("Someone found at " + self.name + " @ " + str(self.found_time) + "ms")
             self.found = True
             self.found_time = utime.ticks_ms()
+            if VERBOSE:
+                print("Someone found at " + self.name + " @ " + str(self.found_time) + "ms")
+        self.lock.release()
 
-
-    async def get_distance(self, raw=False):
+    def get_distance(self, raw=False):
         distance = self.sensor.distance_cm()
         if not raw:
             if (distance > (self.average + (self.std * 3))) or (distance == 0):
@@ -91,8 +95,9 @@ class Sensor:
                 #   - or just 0 which is defs an error
                 # if error reoccurring attempt to recalibrate
                 if self.error_count > 10:
-                    await self.calibrate(30, 5)
+                    self.calibrate(30, 5)
                     self.error_count = 0
+
                 return None
         self.error_count = 0
         return distance
@@ -106,13 +111,14 @@ def get_std(trials):
     std = math.sqrt(variance)
     return std
 
-def check_for_passers(left_sensor, right_sensor):
+async def check_for_passers(left_sensor, right_sensor, lock):
+    await lock.acquire()
     # check if someone has passed
     if left_sensor.found and right_sensor.found:
         # check which direction they've come
         if left_sensor.found_time < right_sensor.found_time:
             print("Someone came from the left")
-        elif right_sensor.found_time > left_sensor.found_time:
+        elif left_sensor.found_time > right_sensor.found_time:
             print("Someone came from the right")
         elif left_sensor.found_time == right_sensor.found_time:
             # ignore
@@ -127,10 +133,10 @@ def check_for_passers(left_sensor, right_sensor):
         left_sensor.reset_found()
     if right_sensor.found and right_sensor.get_found_dt() > FOUND_TIMEOUT:
         right_sensor.reset_found()
+    lock.release()
 
-
-def write_data(file, left_sensor, right_sensor, time, header=False):
-    check_for_passers(left_sensor, right_sensor)
+async def write_data(file, left_sensor, right_sensor, time, lock, header=False):
+    await check_for_passers(left_sensor, right_sensor, lock)
     left_distance = right_distance = None
     if left_sensor.distance is not None:
         left_distance = left_sensor.distance
@@ -155,12 +161,20 @@ def write_data(file, left_sensor, right_sensor, time, header=False):
     file.write(data)
 
 
-async def thread_get_distance(sensor):
+async def thread_get_distance(sensor, frequency):
+    time = Time(utime.ticks_ms())
+    time.prev_time = utime.ticks_ms()
     while True:
-        sensor.distance = await sensor.get_distance()
-        sensor.someone_found()
+        # print(sensor.name + " sensor waiting...")
+        await uasyncio.sleep_ms(0)
+        if time.get_dt() > (1/frequency):
+            # print(sensor.name + "sensor getting distance")
+            sensor.distance = sensor.get_distance(raw=True)
+            if not sensor.found and (utime.ticks_ms() > sensor.start_looking):
+                await sensor.someone_found()
+            time.prev_time = utime.ticks_ms()
 
-async def record_log(duration, frequency, sensor_left, sensor_right):
+async def record_log(duration, frequency, sensor_left, sensor_right, lock):
     # record distance
     file = open("record.csv", "w")
     print("Starting Recording Session at " + str(frequency) + "Hz")
@@ -169,6 +183,7 @@ async def record_log(duration, frequency, sensor_left, sensor_right):
     time.start_time = utime.ticks_ms()
     time.prev_time = time.start_time
     while time.get_elapsed() < duration:
+        await uasyncio.sleep_ms(0)
         if time.get_dt() > (1 / frequency):
             # show progress
             if count != 0 and count % 100 == 0:
@@ -178,37 +193,55 @@ async def record_log(duration, frequency, sensor_left, sensor_right):
                 # print(percentage + "% @ " + time.get_elapsed() + "s")
 
             if count == 0:
-                write_data(file, sensor_left, sensor_right, time, True)
+                await write_data(file, sensor_left, sensor_right, time, lock, header=True)
             else:
-                write_data(file, sensor_left, sensor_right, time)
+                await write_data(file, sensor_left, sensor_right, time, lock)
             time.prev_time = utime.ticks_ms()
             count += 1
     file.close()
     print("Ending Recording Session")
     return
 
-def main():
+def connect_to_network(ssid, password):
+    import network
+    sta_if = network.WLAN(network.STA_IF)
+    sta_if.active(True)
+    sta_if.connect(ssid, password)
+    if sta_if.isconnected():
+        print("Successfully connected to " + ssid)
+        return True
+    else:
+        print("Cannot connect to " + ssid)
+        return False
+
+
+def install_asyncio():
+    if connect_to_network("EXETEL E84EE4 2.4G", "HDhuZcsS"):
+        import upip
+        upip.install('micropython-uasyncio')
+
+async def main():
+    print("Starting main()")
     garbage = gc
     frequency = 30 # hz
-    q = uasyncio.Queue()
-    sensor_left = Sensor(q, HCSR04(trigger_pin=14, echo_pin=12), "left")
-    sensor_right = Sensor(q, HCSR04(trigger_pin=5, echo_pin=4), "right")
-    cal_left = uasyncio.create_task(sensor_left.calibrate(frequency, 10))
-    cal_right = uasyncio.create_task(sensor_right.calibrate(frequency, 10))
-    await uasyncio.gather([cal_left, cal_right])
-    await q.join()
+    lock = Lock()
+    sensor_left = Sensor(HCSR04(trigger_pin=14, echo_pin=12), "left", lock)
+    sensor_right = Sensor(HCSR04(trigger_pin=5, echo_pin=4), "right", lock)
+
+    sensor_left.calibrate(frequency, 10)
+    sensor_right.calibrate(frequency, 10)
     garbage.collect()
     garbage.enable()
 
     # threads
-    left = uasyncio.create_task(thread_get_distance(sensor_left))
-    right = uasyncio.create_task(thread_get_distance(sensor_right))
-    record = uasyncio.create_task(record_log(30, 30, sensor_left, sensor_right))
-    await uasyncio.gather([left, right, record])
-    uasyncio.wait_for(record)
-    print("Leaving Main()")
+    loop = uasyncio.get_event_loop()
+    loop.create_task(thread_get_distance(sensor_left, frequency))
+    loop.create_task(thread_get_distance(sensor_right, frequency))
+    # loop.create_task(record_log(30, 30, sensor_left, sensor_right, lock))
+    # loop.run_forever()
+    loop.run_until_complete(record_log(30, 30, sensor_left, sensor_right, lock))
+    print("Leaving main()")
     return
 
-
 if __name__ == "__main__":
-    main()
+    uasyncio.run(main())
