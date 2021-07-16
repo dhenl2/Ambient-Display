@@ -3,8 +3,7 @@ import utime
 import math
 import gc
 from machine import Pin
-import uasyncio
-from uasyncio import Lock
+import socket
 
 STD_THRESHOLD = 1  # if accuracy has a spread larger than 1 std then retry
 FOUND_TIMEOUT = 2  # (s)
@@ -211,6 +210,11 @@ def connect_to_network(ssid, password):
     else:
         print("Cannot connect to " + ssid)
         return False
+
+
+def connect_to_server(host, port):
+    sock = socket,socket()
+
 
 def install_asyncio():
     if connect_to_network("EXETEL E84EE4 2.4G", "HDhuZcsS"):
