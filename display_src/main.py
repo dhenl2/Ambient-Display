@@ -1,8 +1,9 @@
 import time
 import display as dp
 from machine import Pin
-import uasyncio
+import uasyncio as asyncio
 from uasyncio import Lock
+from concurrent.futures import ThreadPoolExecutor
 
 class UserInput:
     def __init__(self, lock):
@@ -24,12 +25,19 @@ class UserInput:
         self.read = None
         self.lock.release()
 
+async def ainput(prompt: str = "") -> str:
+    with ThreadPoolExecutor(1, "AsyncInput") as executor:
+        return await asyncio.get_event_loop().run_in_executor(executor, input, prompt)
+
 
 async def read_user_input(user):
     while True:
-        val = input("Choose to (inc, dec): ")
-        user.add_input(val)
-        await uasyncio.sleep(2)
+        val = await ainput("Choose to (inc, dec): ")
+        if val != "inc" or val != "dec":
+            print("Not a valid input")
+        else:
+            user.add_input(val)
+        await asyncio.sleep(2)
 
 
 def main():
@@ -37,7 +45,7 @@ def main():
     print("Starting main()")
     dp_pin = Pin(13)  # adjust plz
     user = UserInput(Lock())
-    loop = uasyncio.get_event_loop()
+    loop = asyncio.get_event_loop()
     loop.create_task(dp.animation_idea_1(user, dp_pin))
     loop.create_task(read_user_input(user))
     loop.run_forever()
