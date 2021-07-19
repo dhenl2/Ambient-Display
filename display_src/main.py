@@ -3,7 +3,6 @@ import display as dp
 from machine import Pin
 import uasyncio as asyncio
 from uasyncio import Lock
-from concurrent.futures import ThreadPoolExecutor
 
 class UserInput:
     def __init__(self, lock):
@@ -11,33 +10,47 @@ class UserInput:
         self.lock = lock
 
     async def read_input(self):
+        # print("reading user input")
         await self.lock.acquire()
         result = self.read
         self.lock.release()
+        # print("finished reading user input")
+        return result
 
-    def add_input(self, new_input):
+    async def add_input(self, new_input):
+        # print("adding user input")
         await self.lock.acquire()
         self.read = new_input
         self.lock.release()
+        # print("finished adding user input")
 
-    def reset_input(self):
+    async def reset_input(self):
         await self.lock.acquire()
         self.read = None
         self.lock.release()
 
-async def ainput(prompt: str = "") -> str:
-    with ThreadPoolExecutor(1, "AsyncInput") as executor:
-        return await asyncio.get_event_loop().run_in_executor(executor, input, prompt)
-
-
 async def read_user_input(user):
     while True:
-        val = await ainput("Choose to (inc, dec): ")
+        # val = await ainput("Choose to (inc, dec): ")
         if val != "inc" or val != "dec":
             print("Not a valid input")
         else:
             user.add_input(val)
         await asyncio.sleep(2)
+
+
+async def pretend_user_input(user):
+    print("Pretending to be a user")
+    user_inputs = ['inc', 'inc', 'inc', 'inc', 'inc', 'dec', 'dec', 'dec']
+    # user_inputs = ['inc', 'inc']
+    from display import Time
+    timer = Time()
+    timer.start_timer()
+    for i in range(len(user_inputs)):
+        print("Adding user input " + user_inputs[i])
+        await user.add_input(user_inputs[i])
+        await asyncio.sleep(20)
+    print("Finished adding user inputs")
 
 
 def main():
@@ -46,14 +59,14 @@ def main():
     dp_pin = Pin(13)  # adjust plz
     user = UserInput(Lock())
     loop = asyncio.get_event_loop()
-    loop.create_task(dp.animation_idea_1(user, dp_pin))
-    loop.create_task(read_user_input(user))
+    loop.create_task(dp.animation_idea_1(dp_pin, user))
+    loop.create_task(pretend_user_input(user))
     loop.run_forever()
-    dp.animation_idea_1(user, dp_pin)
+    # dp.animation_idea_1(dp_pin, user)
 
 
 if __name__ == "__main__":
-    # uasyncio.run(main())
-    dp_pin = Pin(13)  # adjust plz
+    asyncio.run(main())
+    # dp_pin = Pin(13)  # adjust plz
     # user = UserInput(Lock())
-    dp.animation_idea_1(dp_pin)
+    # dp.animation_idea_1(dp_pin)

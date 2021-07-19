@@ -2,7 +2,7 @@ import neopixel
 from machine import Pin
 import time
 import utime
-import uasyncio
+import uasyncio as asyncio
 
 # Colours
 from main import UserInput
@@ -48,11 +48,15 @@ class Time:
 
 
 class Queue:
-    def __init__(self, items, restrict=False):
-        self.items = items
+    def __init__(self, items, name, restrict=False):
+        if items is None:
+            self.items = list()
+        else:
+            self.items = items
         self.index = 0
         self.restrict = restrict
         self.start = True
+        self.name = name
 
     def get_next(self):
         if self.start:
@@ -78,9 +82,13 @@ class Queue:
                 self.index = 0
             else:
                 self.index = len(self.items) - 1
+        return self.items[self.index]
 
     def get_current(self):
         return self.items[self.index]
+
+    def get_first(self):
+        return self.items[0]
 
     def at_start_index(self):
         if self.index == 0:
@@ -94,16 +102,35 @@ class Queue:
         else:
             return False
 
+    def add_item(self, item):
+        self.items.append(item)
+        print("\titems in %s is now %s" % (self.name, self.items))
+
+    def pop(self):
+        # print("popping item from " + self.name)
+        # print("currently have %d in items list: %s" % (self.get_size(), str(self.items)))
+        popped = self.items.pop(0)
+        # print("popped item " + str(popped))
+        # print("items in list " + str(self.items))
+
+    def get_size(self):
+        return len(self.items)
+
+    def restart(self):
+        self.index = 0
+        self.start = True
+
 
 class LoopSequence:
-    def __init__(self, pixels, colours, rate=1):
-        self.pixels = Queue(pixels)
-        self.colours = Queue(colours)
+    def __init__(self, pixels, colours, name, rate=1):
+        self.pixels = Queue(pixels, "pixels")
+        self.colours = Queue(colours, "colours")
+        self.name = name
         self.rate = rate
         self.time = Time()
 
     def set_color_rate(self, colours, rate):
-        self.colours = Queue(colours)
+        self.colours = Queue(colours, "colours")
         self.rate = rate
 
     def completed_cycle(self):
@@ -118,7 +145,6 @@ class LoopSequence:
             return True
         else:
             return False
-
 
 def turn_on(np, stage, colour):
     for pixel in stage:
@@ -158,94 +184,102 @@ def create_blank_list(num):
         blanks.append(BLANK)
     return blanks
 
+def check_colour_pass(queue):
+    # check if there are items in the colour queue to cycle thru
+    if queue.get_size() != 0:
+        colour_rate, row_queue = queue.get_current()
+        if row_queue.get_current().completed_cycle():
+            print("row %s completed a cycle" % row_queue.get_current().name)
+            if row_queue.at_last_index():
+                # cycled colour through all rows, time to remove
+                print("\trow colour cycled through ")
+                queue.pop()
+                row_queue.restart()
+            else:
+                # pass colour onto next row
+                row = row_queue.get_next()
+                colour, rate = colour_rate
+                print("\tSetting colour %s to row %s" % (colour, row.name))
+                row.set_color_rate(colour, rate)
+
+def cycle_rows(rows, np):
+    for row in rows:
+        if row.time_to_cycle():
+            if row.pixels.at_last_index():
+                turn_on(np, row.pixels.get_next(), row.colours.get_next())
+            else:
+                turn_on(np, row.pixels.get_next(), row.colours.get_current())
+
 
 def animation_idea_1(pin, user: UserInput):
     np = neopixel.NeoPixel(pin, 24)
 
-    str_colours = ("Dark Blue", "Blue", "Light Blue", "Dark Green", "Green", "Light Green", "Yellow", "Orange", "Red")
-    colours = (DARK_BLUE, BLUE, LIGHT_BLUE, DARK_GREEN, GREEN, LIGHT_GREEN, YELLOW, ORANGE, RED)
+    str_colours = ("Blue", "Light Blue", "Green", "Yellow", "Orange", "Red")
+    colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
     colours = list(zip(colours, create_blank_list(len(colours))))
     rate_list = create_rate_list(1, 0.05, len(colours))
     colour_rate_list = list(zip(colours, str_colours, rate_list))
-    colour_rate_list = Queue(colour_rate_list)
-    n_colour, str_colour, n_rate = colour_rate_list.get_next()
-    print("Starting colour %s rate %f" % (str_colour, n_rate))
+    colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
+    # n_colour, str_colour, n_rate = colour_rate_list.get_next()
+    # print("Starting colour %s rate %f" % (str_colour, n_rate))
     start_colour_rate = (GREY, BLANK), 1
 
-    top = LoopSequence(line_1, start_colour_rate[0], rate=start_colour_rate[1])
-    mid = LoopSequence(line_2, start_colour_rate[0], rate=start_colour_rate[1])
-    bot = LoopSequence(line_3, start_colour_rate[0], rate=start_colour_rate[1])
+    top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
+    mid = LoopSequence(line_2, start_colour_rate[0], "middle", rate=start_colour_rate[1])
+    bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
+
+    command_queue = Queue(None, "commands")
+    inc_queue = Queue(None, "inc")
+    inc_rows = Queue((bot, mid, top), "inc_rows")
+    dec_queue = Queue(None, "dec")
+    dec_rows = Queue((top, mid, bot), "dec_rows")
 
     while True:
         # check for user input
-        user_read = user.read_input()
-        if user_read == "inc" or user_read == "dec":
+        await asyncio.sleep_ms(0)
+        user_read = await user.read_input()
+
+        if user_read is not None:
             if user_read == "inc":
                 n_colour, str_colour, n_rate = colour_rate_list.get_next()
-                bot.set_color_rate(n_colour, n_rate)
-                # TODO start to cycle next colour from bottom -> top
+                print("Adding colour %s to queue" % str_colour)
+                command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
             else:
-                n_colour, str_colour, n_rate - colour_rate_list.get_prev()
-                top.set_color_rate(n_colour, n_rate)
-                # TODO start to cycle next colour from top -> bottom
+                n_colour, str_colour, n_rate = colour_rate_list.get_prev()
+                print("Adding colour %s to queue" % str_colour)
+                command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
+            if command_queue.get_size() == 1:
+                # start queue
+                start_colour_rate, start_rows = command_queue.get_first()
+                start_colour, start_rate = start_colour_rate
+                start_row = start_rows.get_first()
+                command_queue.start = False
+                start_row.set_color_rate(start_colour, start_rate)
+            await user.reset_input()
 
-        # cycle top
-        if top.time_to_cycle():
-            turn_on(np, top.pixels.get_next(), top.colours.get_next())
-        # cycle middle
-        if mid.time_to_cycle():
-            turn_on(np, mid.pixels.get_next(), mid.colours.get_next())
-        # cycle bottom
-        if bot.time_to_cycle():
-            turn_on(np, bot.pixels.get_next(), bot.colours.get_next())
+        check_colour_pass(command_queue)
+        cycle_rows((top, mid, bot), np)
 
-        if disp_bot.cycled:
-            if not disp_bot.wait:
-                print("Adding colour %s to bottom" % str_colour)
-                disp_bot.add_colours((n_colour, BLANK))
-                disp_bot.wait = True
-                disp_mid.cycled = False
-            if disp_mid.cycled:
-                if not disp_mid.wait:
-                    print("Adding colour %s to middle" % str_colour)
-                    disp_mid.add_colours((n_colour, BLANK))
-                    disp_mid.wait = True
-                    disp_top.cycled = False
-                if disp_top.cycled:
-                    if not disp_top.wait:
-                        print("Adding colour %s to top" % str_colour)
-                        disp_top.add_colours((n_colour, BLANK))
-                        disp_top.wait = True
-                    else:
-                        # read end of cycle for colour going from bottom to top
-                        # start new colour and rate
-                        n_colour, str_colour, n_rate = colour_rate_list.get_next()
-                        disp_top.cycled = disp_mid.cycled = False
-                        disp_top.wait = disp_mid.wait = disp_bot.wait = False
-                        print("Starting colour %s" % str_colour)
-
-
-
-def run_line_animation(pin, rate):
-    np = neopixel.NeoPixel(pin, 24)
-    loop_1 = LoopSequence(line_1, (DARK_BLUE, BLANK, BLUE, BLANK, LIGHT_BLUE, BLANK))
-    loop_2 = LoopSequence(line_2, (DARK_GREEN, BLANK, GREEN, BLANK, LIGHT_GREEN, BLANK))
-    loop_3 = LoopSequence(line_3, (RED, BLANK, ORANGE, BLANK, YELLOW, BLANK))
-    colour_1 = loop_1.get_next_colour()
-    colour_2 = loop_2.get_next_colour()
-    colour_3 = loop_3.get_next_colour()
-
-    while 1:
-        turn_on(np, loop_1.get_next_pixels(), colour_1)
-        turn_on(np, loop_2.get_next_pixels(), colour_2)
-        turn_on(np, loop_3.get_next_pixels(), colour_3)
-        time.sleep(rate)
-        if loop_1.last_pixels():
-            colour_1 = loop_1.get_next_colour()
-        if loop_2.last_pixels():
-            colour_2 = loop_2.get_next_colour()
-        if loop_3.last_pixels():
-            colour_3 = loop_3.get_next_colour()
+# def run_line_animation(pin, rate):
+#     np = neopixel.NeoPixel(pin, 24)
+#     loop_1 = LoopSequence(line_1, (DARK_BLUE, BLANK, BLUE, BLANK, LIGHT_BLUE, BLANK))
+#     loop_2 = LoopSequence(line_2, (DARK_GREEN, BLANK, GREEN, BLANK, LIGHT_GREEN, BLANK))
+#     loop_3 = LoopSequence(line_3, (RED, BLANK, ORANGE, BLANK, YELLOW, BLANK))
+#     colour_1 = loop_1.get_next_colour()
+#     colour_2 = loop_2.get_next_colour()
+#     colour_3 = loop_3.get_next_colour()
+#
+#     while 1:
+#         turn_on(np, loop_1.get_next_pixels(), colour_1)
+#         turn_on(np, loop_2.get_next_pixels(), colour_2)
+#         turn_on(np, loop_3.get_next_pixels(), colour_3)
+#         time.sleep(rate)
+#         if loop_1.last_pixels():
+#             colour_1 = loop_1.get_next_colour()
+#         if loop_2.last_pixels():
+#             colour_2 = loop_2.get_next_colour()
+#         if loop_3.last_pixels():
+#             colour_3 = loop_3.get_next_colour()
 
 
 def run_circle(pin):
