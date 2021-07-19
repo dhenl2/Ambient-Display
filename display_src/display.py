@@ -7,17 +7,25 @@ import uasyncio as asyncio
 # Colours
 from main import UserInput
 
-RED = (255, 0, 0)
-ORANGE = (255, 128, 0)
-YELLOW = (255, 255, 0)
-DARK_GREEN = (0, 102, 0)
-GREEN = (0, 204, 0)
-LIGHT_GREEN = (102, 255, 102)
-DARK_BLUE = (0, 0, 102)
-BLUE = (0, 0, 255)
-LIGHT_BLUE = (102, 178, 255)
-BLANK = (0, 0, 0)
-GREY = (96, 96, 96)
+class Colour:
+    def __init__(self, rgb, name):
+        self.rgb = rgb
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+RED = Colour((255, 0, 0), "red")
+ORANGE = Colour((255, 128, 0), "orange")
+YELLOW = Colour((255, 255, 0), "yellow")
+DARK_GREEN = Colour((0, 102, 0), "dark green")
+GREEN = Colour((0, 204, 0), "green")
+LIGHT_GREEN = Colour((102, 255, 102), "light green")
+DARK_BLUE = Colour((0, 0, 102), "dark blue")
+BLUE = Colour((0, 0, 255), "blue")
+LIGHT_BLUE = Colour((102, 178, 255), "light blue")
+BLANK = Colour((0, 0, 0), "blank")
+GREY = Colour((96, 96, 96), "grey")
 
 # layers
 circle_1 = [9, 13, 14, 19]
@@ -57,6 +65,9 @@ class Queue:
         self.restrict = restrict
         self.start = True
         self.name = name
+
+    def __repr__(self):
+        return "Queue: " + str(self.items)
 
     def get_next(self):
         if self.start:
@@ -132,6 +143,9 @@ class LoopSequence:
         self.rate = rate
         self.time = Time()
 
+    def __repr__(self):
+        print("LoopSequence: " + self.name)
+
     def set_color_rate(self, colours, rate):
         self.colours = Queue(colours, "colours")
         self.rate = rate
@@ -153,7 +167,7 @@ def turn_on(np, stage, colour):
     for pixel in stage:
         if pixel is None:
             continue
-        np[pixel] = colour
+        np[pixel] = colour.rgb
     np.write()
 
 
@@ -200,7 +214,7 @@ def do_row_cycle(main_queue, queue):
             # pass colour onto next row
             row = row_queue.get_next()
             colour, rate = colour_rate
-            print("\tSetting colour %s to row %s" % (colour, row.name))
+            print("\tSetting colour %s to row %s" % (str(colour), row.name))
             row.set_color_rate(colour, rate)
 
 def check_colour_pass(queue):
@@ -223,11 +237,10 @@ def cycle_rows(rows, np):
 def animation_idea_1(pin, user: UserInput):
     np = neopixel.NeoPixel(pin, 24)
 
-    str_colours = ("Blue", "Light Blue", "Green", "Yellow", "Orange", "Red")
     colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
     colours = list(zip(colours, create_blank_list(len(colours))))
     rate_list = create_rate_list(1, 0.05, len(colours))
-    colour_rate_list = list(zip(colours, str_colours, rate_list))
+    colour_rate_list = list(zip(colours, rate_list))
     colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
     start_colour_rate = (GREY, BLANK), 1
 
@@ -244,12 +257,12 @@ def animation_idea_1(pin, user: UserInput):
 
         if user_read is not None:
             if user_read == "inc":
-                n_colour, str_colour, n_rate = colour_rate_list.get_next()
-                print("Adding colour %s to queue" % str_colour)
+                n_colour, n_rate = colour_rate_list.get_next()
+                print("Adding colour %s to queue" % str(n_colour))
                 command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
             else:
-                n_colour, str_colour, n_rate = colour_rate_list.get_prev()
-                print("Adding colour %s to queue" % str_colour)
+                n_colour, n_rate = colour_rate_list.get_prev()
+                print("Adding colour %s to queue" % str(n_colour))
                 command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
             if command_queue.get_size() == 1:
                 # start queue
