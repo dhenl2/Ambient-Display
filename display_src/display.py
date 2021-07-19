@@ -116,7 +116,7 @@ class Queue:
 
     def add_item(self, item):
         self.items.append(item)
-        print("\titems in %s is now %s" % (self.name, self.items))
+        # print("\titems in %s is now %s" % (self.name, self.items))
 
     def pop(self):
         popped = self.items.pop(0)
@@ -233,7 +233,7 @@ def animation_idea_1(pin, user: UserInput):
 
     colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
     colours = list(zip(colours, create_blank_list(len(colours))))
-    rate_list = create_rate_list(1, 0.05, len(colours))
+    rate_list = create_rate_list(1, 0.005, len(colours))
     colour_rate_list = list(zip(colours, rate_list))
     colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
     start_colour_rate = (GREY, BLANK), 1

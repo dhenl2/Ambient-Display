@@ -41,16 +41,16 @@ async def read_user_input(user):
 
 async def pretend_user_input(user):
     print("Pretending to be a user")
-    user_inputs = ['inc', 'inc', 'inc', 'inc', 'inc', 'dec', 'dec', 'dec']
-    # user_inputs = ['inc', 'inc']
+    user_inputs = ['inc', 'inc', 'inc', 'inc', 'inc', 'inc', 'dec', 'dec', 'dec', 'dec', 'dec']
     from display import Time
     timer = Time()
     timer.start_timer()
-    for i in range(len(user_inputs)):
-        print("Adding user input " + user_inputs[i])
-        await user.add_input(user_inputs[i])
-        await asyncio.sleep(20)
-    print("Finished adding user inputs")
+    while True:
+        for i in range(len(user_inputs)):
+            print("Adding user input " + user_inputs[i])
+            await user.add_input(user_inputs[i])
+            await asyncio.sleep(30)
+        print("Finished adding user inputs")
 
 
 def main():
