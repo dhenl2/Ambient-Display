@@ -84,6 +84,9 @@ class Queue:
                 self.index = len(self.items) - 1
         return self.items[self.index]
 
+    def get_after_next(self):
+        return self.items[self.index + 1]
+
     def get_current(self):
         return self.items[self.index]
 
@@ -184,23 +187,29 @@ def create_blank_list(num):
         blanks.append(BLANK)
     return blanks
 
+def do_row_cycle(main_queue, queue):
+    colour_rate, row_queue = queue
+    if row_queue.get_current().completed_cycle():
+        print("row %s completed a cycle" % row_queue.get_current().name)
+        if row_queue.at_last_index():
+            # cycled colour through all rows, time to remove
+            print("\trow colour cycled through ")
+            main_queue.pop()
+            # row_queue.restart()
+        else:
+            # pass colour onto next row
+            row = row_queue.get_next()
+            colour, rate = colour_rate
+            print("\tSetting colour %s to row %s" % (colour, row.name))
+            row.set_color_rate(colour, rate)
+
 def check_colour_pass(queue):
     # check if there are items in the colour queue to cycle thru
     if queue.get_size() != 0:
-        colour_rate, row_queue = queue.get_current()
-        if row_queue.get_current().completed_cycle():
-            print("row %s completed a cycle" % row_queue.get_current().name)
-            if row_queue.at_last_index():
-                # cycled colour through all rows, time to remove
-                print("\trow colour cycled through ")
-                queue.pop()
-                row_queue.restart()
-            else:
-                # pass colour onto next row
-                row = row_queue.get_next()
-                colour, rate = colour_rate
-                print("\tSetting colour %s to row %s" % (colour, row.name))
-                row.set_color_rate(colour, rate)
+        do_row_cycle(queue, queue.get_current())
+        if queue.get_size() > 1:
+            # start next in line
+            do_row_cycle(queue, queue.get_after_next())
 
 def cycle_rows(rows, np):
     for row in rows:
@@ -220,8 +229,6 @@ def animation_idea_1(pin, user: UserInput):
     rate_list = create_rate_list(1, 0.05, len(colours))
     colour_rate_list = list(zip(colours, str_colours, rate_list))
     colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
-    # n_colour, str_colour, n_rate = colour_rate_list.get_next()
-    # print("Starting colour %s rate %f" % (str_colour, n_rate))
     start_colour_rate = (GREY, BLANK), 1
 
     top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
@@ -229,10 +236,6 @@ def animation_idea_1(pin, user: UserInput):
     bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
 
     command_queue = Queue(None, "commands")
-    inc_queue = Queue(None, "inc")
-    inc_rows = Queue((bot, mid, top), "inc_rows")
-    dec_queue = Queue(None, "dec")
-    dec_rows = Queue((top, mid, bot), "dec_rows")
 
     while True:
         # check for user input

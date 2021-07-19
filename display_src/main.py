@@ -62,11 +62,6 @@ def main():
     loop.create_task(dp.animation_idea_1(dp_pin, user))
     loop.create_task(pretend_user_input(user))
     loop.run_forever()
-    # dp.animation_idea_1(dp_pin, user)
-
 
 if __name__ == "__main__":
     asyncio.run(main())
-    # dp_pin = Pin(13)  # adjust plz
-    # user = UserInput(Lock())
-    # dp.animation_idea_1(dp_pin)
