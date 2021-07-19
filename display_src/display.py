@@ -1,10 +1,7 @@
 import neopixel
-from machine import Pin
 import time
 import utime
 import uasyncio as asyncio
-
-# Colours
 from main import UserInput
 
 class Colour:
@@ -15,6 +12,7 @@ class Colour:
     def __repr__(self):
         return self.name
 
+# Colours
 RED = Colour((255, 0, 0), "red")
 ORANGE = Colour((255, 128, 0), "orange")
 YELLOW = Colour((255, 255, 0), "yellow")
@@ -121,11 +119,7 @@ class Queue:
         print("\titems in %s is now %s" % (self.name, self.items))
 
     def pop(self):
-        # print("popping item from " + self.name)
-        # print("currently have %d in items list: %s" % (self.get_size(), str(self.items)))
         popped = self.items.pop(0)
-        # print("popped item " + str(popped))
-        # print("items in list " + str(self.items))
 
     def get_size(self):
         return len(self.items)
