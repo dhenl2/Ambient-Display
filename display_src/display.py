@@ -270,27 +270,6 @@ def animation_idea_1(pin, user: UserInput):
         check_colour_pass(command_queue)
         cycle_rows((top, mid, bot), np)
 
-# def run_line_animation(pin, rate):
-#     np = neopixel.NeoPixel(pin, 24)
-#     loop_1 = LoopSequence(line_1, (DARK_BLUE, BLANK, BLUE, BLANK, LIGHT_BLUE, BLANK))
-#     loop_2 = LoopSequence(line_2, (DARK_GREEN, BLANK, GREEN, BLANK, LIGHT_GREEN, BLANK))
-#     loop_3 = LoopSequence(line_3, (RED, BLANK, ORANGE, BLANK, YELLOW, BLANK))
-#     colour_1 = loop_1.get_next_colour()
-#     colour_2 = loop_2.get_next_colour()
-#     colour_3 = loop_3.get_next_colour()
-#
-#     while 1:
-#         turn_on(np, loop_1.get_next_pixels(), colour_1)
-#         turn_on(np, loop_2.get_next_pixels(), colour_2)
-#         turn_on(np, loop_3.get_next_pixels(), colour_3)
-#         time.sleep(rate)
-#         if loop_1.last_pixels():
-#             colour_1 = loop_1.get_next_colour()
-#         if loop_2.last_pixels():
-#             colour_2 = loop_2.get_next_colour()
-#         if loop_3.last_pixels():
-#             colour_3 = loop_3.get_next_colour()
-
 
 def run_circle(pin):
     np = neopixel.NeoPixel(pin, 24)
