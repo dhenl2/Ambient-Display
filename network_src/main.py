@@ -71,6 +71,7 @@ def web_page():
 # ========================================================
 #           SERVER
 # ========================================================
+# https://github.com/peterhinch/micropython-async/blob/master/v2/client_server/userver.py
 
 # import usocket as socket
 # import uasyncio as asyncio
@@ -135,6 +136,7 @@ def web_page():
 # ========================================================
 #           CLIENT
 # ========================================================
+# https://github.com/peterhinch/micropython-async/blob/master/v2/client_server/uclient.py
 
 import usocket as socket
 import uasyncio as asyncio
