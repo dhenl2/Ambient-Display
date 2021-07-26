@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/microphone_src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/prototype_src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/network_src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (hw)" jdkType="Python SDK" />
