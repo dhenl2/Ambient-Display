@@ -212,10 +212,6 @@ def connect_to_network(ssid, password):
         return False
 
 
-def connect_to_server(host, port):
-    sock = socket,socket()
-
-
 def install_asyncio():
     if connect_to_network("EXETEL E84EE4 2.4G", "HDhuZcsS"):
         import upip
