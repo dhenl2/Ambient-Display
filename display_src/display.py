@@ -35,6 +35,7 @@ line_1 = [[None], [22], [23, 19], [18], [17, 15], [16], [None]]
 line_2 = [[21], [20, 12], [13], [14, 9], [8], [7, 5], [6]]
 line_3 = [[None], [11], [10, 2], [3], [4, 1], [0], [None]]
 
+
 class Time:
     def __init__(self):
         self.prev_time = 0
@@ -250,6 +251,7 @@ def animation_idea_1(pin, user: UserInput):
         user_read = await user.read_input()
 
         if user_read is not None:
+            print("user_read: " + user_read)
             if user_read == "inc":
                 n_colour, n_rate = colour_rate_list.get_next()
                 print("Adding colour %s to queue" % str(n_colour))

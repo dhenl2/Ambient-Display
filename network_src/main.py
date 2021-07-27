@@ -143,7 +143,7 @@ import uasyncio as asyncio
 import ujson
 from heartbeat import heartbeat  # Optional LED flash
 
-server = '192.168.20.30'
+server = '192.168.20.89'
 port = 8123
 
 async def run():
@@ -158,6 +158,7 @@ async def run():
         print('Cannot connect to {} on port {}'.format(server, port))
         sock.close()
         return
+    print("Connection successful to {} on port {}".format(server, port))
     while True:
         sreader = asyncio.StreamReader(sock)
         swriter = asyncio.StreamWriter(sock, {})
