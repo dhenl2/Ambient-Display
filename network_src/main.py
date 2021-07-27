@@ -138,7 +138,6 @@ def web_page():
 # ========================================================
 # https://github.com/peterhinch/micropython-async/blob/master/v2/client_server/uclient.py
 
-import usocket as socket
 import uasyncio as asyncio
 import ujson
 from heartbeat import heartbeat  # Optional LED flash
