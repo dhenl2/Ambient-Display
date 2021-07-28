@@ -62,33 +62,41 @@ async def record_log(duration, frequency, sensor_left, sensor_right, lock):
 async def report_to_system(sensor_left, sensor_right, lock):
     server = '192.168.20.89'
     port = 8123
-    sock = socket.socket()
 
-    def close():
+    async def connect():
+        print("Trying to connect to server " + server)
+        sock = socket.socket()
+        try:
+            serv = socket.getaddrinfo(server, port)[0][-1]
+            sock.connect(serv)
+            print("Connection successful to {} on port {}".format(server, port))
+        except OSError as e:
+            print('Cannot connect to {} on port {}'.format(server, port))
+            sock.close()
+        return sock
+
+    def close(sock):
         sock.close()
         print('Server disconnect.')
 
-    try:
-        serv = socket.getaddrinfo(server, port)[0][-1]
-        sock.connect(serv)
-    except OSError as e:
-        print('Cannot connect to {} on port {}'.format(server, port))
-        sock.close()
-        return
-    print("Connection successful to {} on port {}".format(server, port))
-    while True:
-        sreader = asyncio.StreamReader(sock)
-        swriter = asyncio.StreamWriter(sock, {})
+    async def run_program(sock):
+        print("Starting running program")
         while True:
-            try:
-                result = await check_for_passers(sensor_left, sensor_right, lock, True)
-                if result is not None:
-                    result = str(result) + '\0'
-                    result = bytes(str(result), 'utf-8')
-                    await swriter.awrite(result)
-            except OSError:
-                close()
-            await asyncio.sleep_ms(0)
+            sock_writer = asyncio.StreamWriter(sock, {})
+            while True:
+                try:
+                    result = await check_for_passers(sensor_left, sensor_right, lock, True)
+                    if result is not None:
+                        result = str(result) + '\0'
+                        result = bytes(str(result), 'utf-8')
+                        await sock_writer.awrite(result)
+                except OSError:
+                    close(sock)
+                await asyncio.sleep_ms(0)
+
+    while True:
+        conn = await connect()
+        await run_program(conn)
 
 async def main():
     print("Starting main()")
