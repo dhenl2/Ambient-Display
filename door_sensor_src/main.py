@@ -79,17 +79,43 @@ async def report_to_system(sensor_left, sensor_right, lock):
         sock.close()
         print('Server disconnect.')
 
+    def send_msg(sock, writer, msg):
+        try:
+            print("Sending msg")
+            msg += '\0'
+            msg = bytes(msg, 'utf-8')
+            await writer.awrite(msg)
+        except OSError:
+            close(sock)
+
+    def receive_msg(sock, reader):
+        try:
+            msg = await reader.readline()
+            msg = msg.decode('utf-8')[:-1]
+            print("Received msg: " + msg)
+            return msg
+        except OSError:
+            close(sock)
+            return ""
+
+    def perform_handshake(sock, writer, reader):
+        sensor = "display"
+        send_msg(sock, writer, sensor)
+        msg = receive_msg(sock, reader)
+        if msg != "OK":
+            close(sock)
+
     async def run_program(sock):
         print("Starting running program")
         while True:
+            sock_reader = asyncio.StreamReader(sock)
             sock_writer = asyncio.StreamWriter(sock, {})
+            perform_handshake(sock, sock_writer, sock_reader)
             while True:
                 try:
                     result = await check_for_passers(sensor_left, sensor_right, lock, True)
                     if result is not None:
-                        result = str(result) + '\0'
-                        result = bytes(str(result), 'utf-8')
-                        await sock_writer.awrite(result)
+                        send_msg(sock, sock_writer, result)
                 except OSError:
                     close(sock)
                 await asyncio.sleep_ms(0)

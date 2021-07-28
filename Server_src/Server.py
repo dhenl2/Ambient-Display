@@ -70,7 +70,10 @@ def identify_client(con, clients):
     # area, sensor
     identification = con.recv(1024).decode('utf-8')
     sensor = identification[:-1]
-    return Client(sensor, con, clients)
+    client = Client(sensor, con, clients)
+    if client.name != "invalid":
+        client.write("OK")
+    return client
 
 
 

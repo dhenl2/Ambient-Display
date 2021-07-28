@@ -78,15 +78,41 @@ async def read_external_input(user):
         sock.close()
         print('Server disconnect.')
 
+    def send_msg(sock, writer, msg):
+        try:
+            print("Sending msg")
+            msg += '\0'
+            msg = bytes(msg, 'utf-8')
+            await writer.awrite(msg)
+        except OSError:
+            close(sock)
+
+    def receive_msg(sock, reader):
+        try:
+            msg = await reader.readline()
+            msg = msg.decode('utf-8')[:-1]
+            print("Received msg: " + msg)
+            return msg
+        except OSError:
+            close(sock)
+            return ""
+
+    def perform_handshake(sock, writer, reader):
+        sensor = "display"
+        send_msg(sock, writer, sensor)
+        msg = receive_msg(sock, reader)
+        if msg != "OK":
+            close(sock)
+
     async def run_program(sock):
         print("Start running program")
         while True:
             sock_reader = asyncio.StreamReader(sock)
+            sock_writer = asyncio.StreamWriter(sock, {})
+            perform_handshake(sock, sock_writer, sock_reader)
             while True:
                 try:
-                    command = await sock_reader.readline()
-                    command = command.decode('utf-8')[:-1]
-                    print("Received command: " + command)
+                    command = receive_msg(sock, sock_reader)
                     await user.add_input(command)
                 except OSError:
                     close(sock)
