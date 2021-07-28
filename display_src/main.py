@@ -111,11 +111,8 @@ async def read_external_input(user):
             sock_writer = asyncio.StreamWriter(sock, {})
             perform_handshake(sock, sock_writer, sock_reader)
             while True:
-                try:
-                    command = receive_msg(sock, sock_reader)
-                    await user.add_input(command)
-                except OSError:
-                    close(sock)
+                command = receive_msg(sock, sock_reader)
+                await user.add_input(command)
                 await asyncio.sleep_ms(0)
 
     while True:

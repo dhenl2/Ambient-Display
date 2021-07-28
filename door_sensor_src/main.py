@@ -112,12 +112,9 @@ async def report_to_system(sensor_left, sensor_right, lock):
             sock_writer = asyncio.StreamWriter(sock, {})
             perform_handshake(sock, sock_writer, sock_reader)
             while True:
-                try:
-                    result = await check_for_passers(sensor_left, sensor_right, lock, True)
-                    if result is not None:
-                        send_msg(sock, sock_writer, result)
-                except OSError:
-                    close(sock)
+                result = await check_for_passers(sensor_left, sensor_right, lock, True)
+                if result is not None:
+                    send_msg(sock, sock_writer, result)
                 await asyncio.sleep_ms(0)
 
     while True:
