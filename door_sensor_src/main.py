@@ -99,7 +99,7 @@ async def report_to_system(sensor_left, sensor_right, lock):
             return ""
 
     def perform_handshake(sock, writer, reader):
-        sensor = "display"
+        sensor = "door_sensor"
         send_msg(sock, writer, sensor)
         msg = receive_msg(sock, reader)
         if msg != "OK":
