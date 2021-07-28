@@ -61,39 +61,40 @@ async def pretend_user_input(user):
 async def read_external_input(user):
     server = '192.168.20.89'
     port = 8123
-    sock = socket.socket()
 
-    def close():
+    async def connect():
+        print("Trying to connect to server " + server)
+        sock = socket.socket()
+        try:
+            serv = socket.getaddrinfo(server, port)[0][-1]
+            sock.connect(serv)
+            print("Connection successful to {} on port {}".format(server, port))
+        except OSError as e:
+            print('Cannot connect to {} on port {}'.format(server, port))
+            sock.close()
+        return sock
+
+    def close(sock):
         sock.close()
         print('Server disconnect.')
 
-    try:
-        serv = socket.getaddrinfo(server, port)[0][-1]
-        sock.connect(serv)
-    except OSError as e:
-        print('Cannot connect to {} on port {}'.format(server, port))
-        sock.close()
-        return
-    print("Connection successful to {} on port {}".format(server, port))
-    while True:
-        sreader = asyncio.StreamReader(sock)
-        swriter = asyncio.StreamWriter(sock, {})
+    async def run_program(sock):
+        print("Start running program")
         while True:
-            try:
-                command = await sreader.readline()
-                command = command.decode('utf-8')[:-1]
-                print("Received command: " + command)
-                await user.add_input(command)
-            except OSError:
-                close()
-            await asyncio.sleep_ms(0)
+            sock_reader = asyncio.StreamReader(sock)
+            while True:
+                try:
+                    command = await sock_reader.readline()
+                    command = command.decode('utf-8')[:-1]
+                    print("Received command: " + command)
+                    await user.add_input(command)
+                except OSError:
+                    close(sock)
+                await asyncio.sleep_ms(0)
 
-
-async def run_server(user):
-    server = await asyncio.start_server(read_external_input(user), '', 12345)
-    async with server:
-        print("Awaiting a connection")
-        await server.serve_forever()
+    while True:
+        conn = await connect()
+        await run_program(conn)
 
 
 def main():
