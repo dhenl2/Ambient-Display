@@ -142,40 +142,48 @@ import uasyncio as asyncio
 import ujson
 from heartbeat import heartbeat  # Optional LED flash
 
-server = '192.168.20.89'
-port = 8123
 
 async def run():
-    sock = socket.socket()
-    def close():
+    server = '192.168.20.89'
+    port = 8123
+
+    def connect():
+        print("Trying to connect to server " + server)
+        sock = socket.socket()
+        try:
+            serv = socket.getaddrinfo(server, port)[0][-1]
+            sock.connect(serv)
+            print("Connection successful to {} on port {}".format(server, port))
+        except OSError as e:
+            print('Cannot connect to {} on port {}'.format(server, port))
+            sock.close()
+        return sock
+
+    def close(sock):
         sock.close()
         print('Server disconnect.')
-    try:
-        serv = socket.getaddrinfo(server, port)[0][-1]
-        sock.connect(serv)
-    except OSError as e:
-        print('Cannot connect to {} on port {}'.format(server, port))
-        sock.close()
-        return
-    print("Connection successful to {} on port {}".format(server, port))
-    while True:
-        sreader = asyncio.StreamReader(sock)
-        swriter = asyncio.StreamWriter(sock, {})
-        data = ['value', 1]
+
+    async def send_receive(sock):
+        print("Start send/receive messages")
         while True:
-            try:
-                await swriter.awrite('{}\n'.format(ujson.dumps(data)))
-                res = await sreader.readline()
-            except OSError:
-                close()
-                return
-            try:
-                print('Received', ujson.loads(res))
-            except ValueError:
-                close()
-                return
-            await asyncio.sleep(2)
-            data[1] += 1
+            sreader = asyncio.StreamReader(sock)
+            swriter = asyncio.StreamWriter(sock, {})
+            data = ['value', 1]
+            while True:
+                try:
+                    await swriter.awrite('{}\n'.format(ujson.dumps(data)))
+                    res = await sreader.readline()
+                except OSError:
+                    print("Received OSError")
+                    close(sock)
+                    return
+                await asyncio.sleep(2)
+                data[1] += 1
+
+    while True:
+        sock_conn = connect()
+        await send_receive(sock_conn)
+
 
 loop = asyncio.get_event_loop()
 # Optional fast heartbeat to confirm nonblocking operation
