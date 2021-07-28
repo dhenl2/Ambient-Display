@@ -7,41 +7,65 @@ except:
 
 led = Pin(2, Pin.OUT)
 
+# ========================================================
+#           CLIENT
+# ========================================================
+# https://github.com/peterhinch/micropython-async/blob/master/v2/client_server/uclient.py
 
-def connect_to_network(ssid="EXETEL E84EE4 2.4G", password="HDhuZcsS"):
-    import network
-    sta_if = network.WLAN(network.STA_IF)
-    sta_if.active(True)
-    sta_if.connect(ssid, password)
-    time.sleep(1)
-    if sta_if.isconnected():
-        print("Successfully connected to " + ssid)
-        return sta_if
-    else:
-        print("Cannot connect to " + ssid)
-        return None
+import uasyncio as asyncio
+import ujson
+from heartbeat import heartbeat  # Optional LED flash
 
-def connect_to_server(ip, port):
-    import socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    print("Trying to connect to " + ip)
-    sock.connect((ip, port))
-    return sock
 
-def web_page():
-    if led.value() == 1:
-        gpio_state = "ON"
-    else:
-        gpio_state = "OFF"
+async def run():
+    server = '192.168.20.89'
+    port = 8123
 
-    html = """<html><head> <title>ESP Web Server</title> <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="icon" href="data:,"> <style>html{font-family: Helvetica; display:inline-block; margin: 0px auto; text-align: center;}
-      h1{color: #0F3376; padding: 2vh;}p{font-size: 1.5rem;}.button{display: inline-block; background-color: #e7bd3b; border: none; 
-      border-radius: 4px; color: white; padding: 16px 40px; text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}
-      .button2{background-color: #4286f4;}</style></head><body> <h1>ESP Web Server</h1> 
-      <p>GPIO state: <strong>""" + gpio_state + """</strong></p><p><a href="/?led=on"><button class="button">ON</button></a></p>
-      <p><a href="/?led=off"><button class="button button2">OFF</button></a></p></body></html>"""
-    return html
+    def connect():
+        print("Trying to connect to server " + server)
+        sock = socket.socket()
+        try:
+            serv = socket.getaddrinfo(server, port)[0][-1]
+            sock.connect(serv)
+            print("Connection successful to {} on port {}".format(server, port))
+        except OSError as e:
+            print('Cannot connect to {} on port {}'.format(server, port))
+            sock.close()
+        return sock
+
+    def close(sock):
+        sock.close()
+        print('Server disconnect.')
+
+    async def send_receive(sock):
+        print("Start send/receive messages")
+        while True:
+            sreader = asyncio.StreamReader(sock)
+            swriter = asyncio.StreamWriter(sock, {})
+            data = ['value', 1]
+            while True:
+                try:
+                    await swriter.awrite('{}\n'.format(ujson.dumps(data)))
+                    res = await sreader.readline()
+                except OSError:
+                    print("Received OSError")
+                    close(sock)
+                    return
+                await asyncio.sleep(2)
+                data[1] += 1
+
+    while True:
+        sock_conn = connect()
+        await send_receive(sock_conn)
+
+
+loop = asyncio.get_event_loop()
+# Optional fast heartbeat to confirm nonblocking operation
+loop.create_task(heartbeat(100))
+try:
+    loop.run_until_complete(run())
+except KeyboardInterrupt:
+    print('Interrupted')  # This mechanism doesn't work on Unix build.
 
 # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # s.bind(('', 80))
@@ -132,63 +156,3 @@ def web_page():
 #     print('Interrupted')  # This mechanism doesn't work on Unix build.
 # finally:
 #     server.close()
-
-# ========================================================
-#           CLIENT
-# ========================================================
-# https://github.com/peterhinch/micropython-async/blob/master/v2/client_server/uclient.py
-
-import uasyncio as asyncio
-import ujson
-from heartbeat import heartbeat  # Optional LED flash
-
-
-async def run():
-    server = '192.168.20.89'
-    port = 8123
-
-    def connect():
-        print("Trying to connect to server " + server)
-        sock = socket.socket()
-        try:
-            serv = socket.getaddrinfo(server, port)[0][-1]
-            sock.connect(serv)
-            print("Connection successful to {} on port {}".format(server, port))
-        except OSError as e:
-            print('Cannot connect to {} on port {}'.format(server, port))
-            sock.close()
-        return sock
-
-    def close(sock):
-        sock.close()
-        print('Server disconnect.')
-
-    async def send_receive(sock):
-        print("Start send/receive messages")
-        while True:
-            sreader = asyncio.StreamReader(sock)
-            swriter = asyncio.StreamWriter(sock, {})
-            data = ['value', 1]
-            while True:
-                try:
-                    await swriter.awrite('{}\n'.format(ujson.dumps(data)))
-                    res = await sreader.readline()
-                except OSError:
-                    print("Received OSError")
-                    close(sock)
-                    return
-                await asyncio.sleep(2)
-                data[1] += 1
-
-    while True:
-        sock_conn = connect()
-        await send_receive(sock_conn)
-
-
-loop = asyncio.get_event_loop()
-# Optional fast heartbeat to confirm nonblocking operation
-loop.create_task(heartbeat(100))
-try:
-    loop.run_until_complete(run())
-except KeyboardInterrupt:
-    print('Interrupted')  # This mechanism doesn't work on Unix build.
