@@ -25,5 +25,5 @@ def read_deb():
     volts = (peak_to_peak * 3.3) / 1024
     first = (math.log(volts / 0.00631) / math.log(10)) * 20     # converts natural log to log10
     second = first + 94 - 44 - 25
-    print("dB reading: " + str(second) + "dB")
+    # print("dB reading: " + str(second) + "dB")
     return second
