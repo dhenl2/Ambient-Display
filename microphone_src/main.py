@@ -1,10 +1,11 @@
 import microphone as mic
-from machine import Pin
 import uasyncio as asyncio
 import usocket as socket
+import utime
+import gc
 
 
-async def report_to_system(sensor_left, sensor_right, lock):
+async def report_to_system():
     server = '192.168.20.89'
     port = 8123
 
@@ -58,8 +59,8 @@ async def report_to_system(sensor_left, sensor_right, lock):
             perform_handshake(sock, sock_writer, sock_reader)
             while True:
                 try:
-                    # TODO send db level
-                    pass
+                    db_reading = get_max_db()
+                    send_msg(sock, sock_writer, str(db_reading))
                 except OSError:
                     close(sock)
                 await asyncio.sleep_ms(0)
@@ -68,7 +69,18 @@ async def report_to_system(sensor_left, sensor_right, lock):
         conn = await connect()
         await run_program(conn)
 
+def get_max_db():
+    # get max dB reading during a 1s or 1000ms period
+    max_db = 0
+    start_time = utime.ticks_ms()
+    while utime.ticks_ms() - start_time < 1000:
+        db_reading = mic.read_deb()
+        if db_reading > max_db:
+            max_db = db_reading
+    return max_db
+
+def main():
+    report_to_system()
+
 if __name__ == "__main__":
-    mic_pin = Pin(5, Pin.IN)
-    mic.read_pin(mic_pin)
-    mic.read_freq(mic_pin)
+    main()

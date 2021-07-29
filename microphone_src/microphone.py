@@ -1,12 +1,10 @@
 import machine
-from machine import Pin
-from time import sleep
 import utime
+import math
 
 pot = machine.ADC(0)
 
-
-def read_freq(pin):
+def read_deb():
     sample_window = 50        # 50ms = 20Hz
     start_time = utime.ticks_ms()
     signal_max = 0
@@ -22,12 +20,7 @@ def read_freq(pin):
                 signal_min = sample
 
     peak_to_peak = signal_max - signal_min
-    volts = (peak_to_peak * 5.0) / 1024
-    print(volts)
-
-
-
-def read_pin(pin):
-    pot_value = pot.read()
-    print(pot_value)
-    sleep(0.1)
+    volts = (peak_to_peak * 3.3) / 1024
+    first = (math.log(volts / 0.00631) / math.log(10)) * 20     # converts natural log to log10
+    second = first + 94 - 44 - 25
+    print("dB reading: " + str(second) + "dB")
