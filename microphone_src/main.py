@@ -10,30 +10,33 @@ async def report_to_system():
 
     async def connect():
         print("Trying to connect to server " + server)
-        sock = socket.socket()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             serv = socket.getaddrinfo(server, port)[0][-1]
             sock.connect(serv)
             print("Connection successful to {} on port {}".format(server, port))
+            return sock
         except OSError as e:
             print('Cannot connect to {} on port {}'.format(server, port))
             sock.close()
-        return sock
+            return None
 
     def close(sock):
         sock.close()
         print('Server disconnect.')
 
-    def send_msg(sock, writer, msg):
+    async def send_msg(sock, writer, msg):
         try:
             print("Sending msg")
-            msg += '\0'
+            msg += '\n'
             msg = bytes(msg, 'utf-8')
             await writer.awrite(msg)
+            return True
         except OSError:
             close(sock)
+            return False
 
-    def receive_msg(sock, reader):
+    async def receive_msg(sock, reader):
         try:
             msg = await reader.readline()
             msg = msg.decode('utf-8')[:-1]
@@ -43,11 +46,12 @@ async def report_to_system():
             close(sock)
             return ""
 
-    def perform_handshake(sock, writer, reader):
+    async def perform_handshake(sock, writer, reader):
+        print("Performing handshake")
         sensor = "microphone"
-        send_msg(sock, writer, sensor)
-        msg = receive_msg(sock, reader)
-        if msg != "OK":
+        await send_msg(sock, writer, sensor)
+        msg = await receive_msg(sock, reader)
+        if msg != "Received":
             close(sock)
 
     async def run_program(sock):
@@ -55,20 +59,24 @@ async def report_to_system():
         while True:
             sock_reader = asyncio.StreamReader(sock)
             sock_writer = asyncio.StreamWriter(sock, {})
-            perform_handshake(sock, sock_writer, sock_reader)
+            await perform_handshake(sock, sock_writer, sock_reader)
             while True:
-                try:
-                    db_reading = get_max_db(1)
-                    send_msg(sock, sock_writer, str(db_reading))
-                except OSError:
-                    close(sock)
+                db_reading = await get_max_db(1)
+                print(str(db_reading) + "dB")
+                result = await send_msg(sock, sock_writer, str(db_reading))
+                if not result:
+                    return
+                # await receive msg
+                await receive_msg(sock, sock_reader)
                 await asyncio.sleep_ms(0)
 
     while True:
-        conn = await connect()
-        await run_program(conn)
+        con = await connect()
+        while con is None:
+            con = await connect()
+        await run_program(con)
 
-def get_max_db(period):
+async def get_max_db(period):
     # get max dB reading during a specified period (s)
     max_db = 0
     start_time = utime.ticks_ms()
@@ -79,7 +87,7 @@ def get_max_db(period):
     return max_db
 
 def main():
-    report_to_system()
+    asyncio.run(report_to_system())
 
 if __name__ == "__main__":
     main()

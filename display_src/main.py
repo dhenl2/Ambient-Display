@@ -69,25 +69,28 @@ async def read_external_input(user):
             serv = socket.getaddrinfo(server, port)[0][-1]
             sock.connect(serv)
             print("Connection successful to {} on port {}".format(server, port))
+            return sock
         except OSError as e:
             print('Cannot connect to {} on port {}'.format(server, port))
             sock.close()
-        return sock
+            return None
 
     def close(sock):
         sock.close()
         print('Server disconnect.')
 
-    def send_msg(sock, writer, msg):
+    async def send_msg(sock, writer, msg):
         try:
             print("Sending msg")
             msg += '\0'
             msg = bytes(msg, 'utf-8')
             await writer.awrite(msg)
+            return True
         except OSError:
             close(sock)
+            return False
 
-    def receive_msg(sock, reader):
+    async def receive_msg(sock, reader):
         try:
             msg = await reader.readline()
             msg = msg.decode('utf-8')[:-1]
@@ -97,11 +100,12 @@ async def read_external_input(user):
             close(sock)
             return ""
 
-    def perform_handshake(sock, writer, reader):
+    async def perform_handshake(sock, writer, reader):
+        print("Performing handshake")
         sensor = "display"
-        send_msg(sock, writer, sensor)
-        msg = receive_msg(sock, reader)
-        if msg != "OK":
+        await send_msg(sock, writer, sensor)
+        msg = await receive_msg(sock, reader)
+        if msg != "Received":
             close(sock)
 
     async def run_program(sock):
@@ -109,18 +113,22 @@ async def read_external_input(user):
         while True:
             sock_reader = asyncio.StreamReader(sock)
             sock_writer = asyncio.StreamWriter(sock, {})
-            perform_handshake(sock, sock_writer, sock_reader)
+            await perform_handshake(sock, sock_writer, sock_reader)
             while True:
-                command = receive_msg(sock, sock_reader)
+                command = await receive_msg(sock, sock_reader)
+                if command == "":
+                    return
                 await user.add_input(command)
                 await asyncio.sleep_ms(0)
 
     while True:
-        conn = await connect()
-        await run_program(conn)
+        con = await connect()
+        while con is None:
+            con = await connect()
+        await run_program(con)
 
 
-def main():
+async def main():
     time.sleep(2)
     print("Starting main()")
     dp_pin = Pin(13)  # adjust plz

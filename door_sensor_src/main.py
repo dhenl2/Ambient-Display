@@ -70,25 +70,28 @@ async def report_to_system(sensor_left, sensor_right, lock):
             serv = socket.getaddrinfo(server, port)[0][-1]
             sock.connect(serv)
             print("Connection successful to {} on port {}".format(server, port))
+            return sock
         except OSError as e:
             print('Cannot connect to {} on port {}'.format(server, port))
             sock.close()
-        return sock
+            return None
 
     def close(sock):
         sock.close()
         print('Server disconnect.')
 
-    def send_msg(sock, writer, msg):
+    async def send_msg(sock, writer, msg):
         try:
             print("Sending msg")
             msg += '\0'
             msg = bytes(msg, 'utf-8')
             await writer.awrite(msg)
+            return True
         except OSError:
             close(sock)
+            return False
 
-    def receive_msg(sock, reader):
+    async def receive_msg(sock, reader):
         try:
             msg = await reader.readline()
             msg = msg.decode('utf-8')[:-1]
@@ -98,11 +101,12 @@ async def report_to_system(sensor_left, sensor_right, lock):
             close(sock)
             return ""
 
-    def perform_handshake(sock, writer, reader):
+    async def perform_handshake(sock, writer, reader):
+        print("Performing handshake")
         sensor = "door_sensor"
-        send_msg(sock, writer, sensor)
-        msg = receive_msg(sock, reader)
-        if msg != "OK":
+        await send_msg(sock, writer, sensor)
+        msg = await receive_msg(sock, reader)
+        if msg != "Received":
             close(sock)
 
     async def run_program(sock):
@@ -110,16 +114,21 @@ async def report_to_system(sensor_left, sensor_right, lock):
         while True:
             sock_reader = asyncio.StreamReader(sock)
             sock_writer = asyncio.StreamWriter(sock, {})
-            perform_handshake(sock, sock_writer, sock_reader)
+            await perform_handshake(sock, sock_writer, sock_reader)
             while True:
                 result = await check_for_passers(sensor_left, sensor_right, lock, True)
                 if result is not None:
-                    send_msg(sock, sock_writer, result)
+                    result = await send_msg(sock, sock_writer, result)
+                    if not result:
+                        return
+                    await receive_msg(sock, sock_reader)
                 await asyncio.sleep_ms(0)
 
     while True:
-        conn = await connect()
-        await run_program(conn)
+        con = await connect()
+        while con is None:
+            con = await connect()
+        await run_program(con)
 
 async def main():
     print("Starting main()")
