@@ -2,7 +2,6 @@ import microphone as mic
 import uasyncio as asyncio
 import usocket as socket
 import utime
-import gc
 
 
 async def report_to_system():
