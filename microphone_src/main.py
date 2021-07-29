@@ -58,7 +58,7 @@ async def report_to_system():
             perform_handshake(sock, sock_writer, sock_reader)
             while True:
                 try:
-                    db_reading = get_max_db()
+                    db_reading = get_max_db(1)
                     send_msg(sock, sock_writer, str(db_reading))
                 except OSError:
                     close(sock)
@@ -68,11 +68,11 @@ async def report_to_system():
         conn = await connect()
         await run_program(conn)
 
-def get_max_db():
-    # get max dB reading during a 1s or 1000ms period
+def get_max_db(period):
+    # get max dB reading during a specified period (s)
     max_db = 0
     start_time = utime.ticks_ms()
-    while utime.ticks_ms() - start_time < 1000:
+    while utime.ticks_ms() - start_time < (period * 1000):
         db_reading = mic.read_deb()
         if db_reading > max_db:
             max_db = db_reading
