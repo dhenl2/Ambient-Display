@@ -5,7 +5,7 @@ import utime
 
 
 async def report_to_system():
-    server = '192.168.20.89'
+    server = '127.0.1.1'
     port = 8123
 
     async def connect():

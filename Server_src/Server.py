@@ -1,6 +1,5 @@
 import socket
 import time
-import select
 
 class ServerInfo:
     def __init__(self, lock):
@@ -9,6 +8,12 @@ class ServerInfo:
         self.display_clients = list()
         self.microphone_clients = list()
         self.door_sensor_clients = list()
+
+    def quit_clients(self):
+        clients = [self.display_clients, self.microphone_clients, self.door_sensor_clients]
+        for client in clients:
+            for sub_client in client:
+                sub_client.quit = True
 
     def add_count(self, amount):
         self.lock.acquire()
@@ -59,6 +64,7 @@ class Client:
         self.con.settimeout(10)
         self.name = None
         self.server = server
+        self.quit = False
 
     def __repr__(self):
         return self.name
@@ -140,12 +146,15 @@ def identify_client(con, server):
 def log_to_file(file, client):
     while True:
         msg = client.receive()
-        if msg == "":
+        if msg == "" or client.quit:
             print("Closing file")
             file.close()
             return
-        data = "{},{}\n".format(msg, time.time())
-        print("Writing: " + data)
+        curr_time = "{}/{}/{}-{}:{}:{}".format(
+            time.localtime().tm_mday, time.localtime().tm_mon, time.localtime().tm_year,
+        time.localtime().tm_hour, time.localtime().tm_min, time.localtime().tm_sec)
+        data = "{},{}\n".format(curr_time, msg)
+        print(f"{client.name} writing: {data}")
         file.write(data)
 
 def client_thread(con, server):
@@ -155,10 +164,10 @@ def client_thread(con, server):
     print("Start logging")
     if client.sensor == "microphone":
         print("logging to microphone.csv")
-        file = open("microphone.csv", "a")
+        file = open("Log/microphone.csv", "a")
         log_to_file(file, client)
     elif client.sensor == "door_sensor":
-        file = open("door_sensor.csv", "a")
+        file = open("Log/door_sensor.csv", "a")
         log_to_file(file, client)
     elif client.sensor == "display":
         # TODO after interpreting average of results
