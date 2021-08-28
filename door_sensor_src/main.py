@@ -152,5 +152,14 @@ async def main():
     print("Leaving main()")
     return
 
+def test():
+    sensor_left = HCSR04(trigger_pin=14, echo_pin=12)
+    sensor_right = HCSR04(trigger_pin=5, echo_pin=4)
+    while True:
+        print("Left: " + str(sensor_left.distance_cm()) + "cm")
+        print("Right: " + str(sensor_right.distance_cm()) + "cm")
+        utime.sleep(1)
+
 if __name__ == "__main__":
     asyncio.run(main())
+    # test()
