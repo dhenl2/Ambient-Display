@@ -59,7 +59,7 @@ async def pretend_user_input(user):
 
 
 async def read_external_input(user):
-    server = '192.168.20.89'
+    server = '192.168.7.1'
     port = 8123
 
     async def connect():

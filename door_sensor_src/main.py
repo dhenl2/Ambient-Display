@@ -60,7 +60,7 @@ async def record_log(duration, frequency, sensor_left, sensor_right, lock):
     return
 
 async def report_to_system(sensor_left, sensor_right, lock):
-    server = '192.168.20.89'
+    server = '192.168.7.1'
     port = 8123
 
     async def connect():

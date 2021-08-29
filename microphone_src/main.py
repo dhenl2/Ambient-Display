@@ -5,7 +5,7 @@ import utime
 
 
 async def report_to_system():
-    server = '127.0.1.1'
+    server = '192.168.7.1'
     port = 8123
 
     async def connect():
@@ -86,8 +86,14 @@ async def get_max_db(period):
             max_db = db_reading
     return max_db
 
+def test():
+    while True:
+        print("dB reading: " + str(mic.read_deb()) + "dB")
+        utime.sleep(1)
+
 def main():
     asyncio.run(report_to_system())
+    # test()
 
 if __name__ == "__main__":
     main()

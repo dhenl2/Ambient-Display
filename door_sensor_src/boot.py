@@ -12,8 +12,11 @@ esp.osdebug(None)
 import gc
 gc.collect()
 
-ssid = 'EXETEL E84EE4 2.4G'
-password = 'HDhuZcsS'
+# ssid = 'EXETEL E84EE4 2.4G'
+# password = 'HDhuZcsS'
+
+ssid = 'AmbientDisplay'
+password = 'Password.1'
 
 station = network.WLAN(network.STA_IF)
 
