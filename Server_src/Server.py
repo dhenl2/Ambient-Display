@@ -1,5 +1,8 @@
+import queue
 import socket
+import sys
 import time
+from ActivityLevel import *
 
 class ServerInfo:
     def __init__(self, lock):
@@ -8,6 +11,8 @@ class ServerInfo:
         self.display_clients = list()
         self.microphone_clients = list()
         self.door_sensor_clients = list()
+        self.activity_level = ActivityLevel(self)
+        self.threads = []
 
     def quit_clients(self):
         clients = [self.display_clients, self.microphone_clients, self.door_sensor_clients]
@@ -20,17 +25,17 @@ class ServerInfo:
         self.count += amount
         self.lock.release()
 
-    def add_client(self, sensor, client):
+    def add_client(self, client):
         num = 0
-        if sensor == "microphone":
+        if client.sensor == "microphone":
             print("Adding microphone client")
             self.microphone_clients.append(client)
             num = len(self.microphone_clients)
-        elif sensor == "door_sensor":
+        elif client.sensor == "door_sensor":
             print("Adding door_sensor client")
             self.door_sensor_clients.append(client)
             num = len(self.door_sensor_clients)
-        elif sensor == "display":
+        elif client.sensor == "display":
             print("Adding display client")
             self.display_clients.append(client)
             num = len(self.display_clients)
@@ -56,69 +61,27 @@ class ServerInfo:
                 # found same client
                 removed_client = clients.pop(i)
                 print(f"Removed client: {removed_client}")
-
-class Client:
-    def __init__(self, con, server):
-        self.sensor = ""
-        self.con = con
-        self.con.settimeout(10)
-        self.name = None
-        self.server = server
-        self.quit = False
-
-    def __repr__(self):
-        return self.name
-
-    def assign_sensor(self, sensor):
-        self.sensor = sensor
-        self.assign_name(self.server)
-
-    def assign_name(self, server):
-        print("Assigning name")
-        added, client_num = server.add_client(self.sensor, self)
-        if added:
-            self.name = f"{self.sensor} ({client_num})"
-        else:
-            # invalid sensor name
-            self.name = "invalid"
-        print("Client assigned name: " + self.name)
-
-    def write(self, msg):
-        try:
-            print("Writing msg: " + msg)
-            self.con.send(bytes(msg + "\n", 'utf-8'))
-        except OSError:
-            self.close()
-
-    def receive(self):
-        print("Receiving msg")
-        # all sent messages are expected to end with a \n
-        buffer = ""
-        timeout_count = 0
-        while True:
-            try:
-                msg = self.con.recv(1).decode('utf-8')
-                if msg == "\n":
-                    # once a message has been read, a "received" message is sent for confirmation
-                    self.write("Received")
-                    return buffer
-                buffer += msg
-                print(f"buffer is now {buffer}")
-            except socket.timeout:
-                print("Hit socket timeout")
-                timeout_count += 1
-                if timeout_count >= 5:
-                    self.close()
-                    return ""
-                continue
-            except socket.error:
-                self.close()
-                return ""
-
-    def close(self):
-        print(f"{self.name} has disconnected. Severing connection")
-        self.con.close()
-        self.server.remove_client(self)
+    
+    def set_clients_pause(self, value):
+        clients = [self.door_sensor_clients, self.microphone_clients]
+        for client_type in clients:
+            for client in client_type:
+                client.pause = value
+    
+    def person_entered(self):
+        self.lock.acquire()
+        self.activity_level.people.addPerson()
+        self.lock.release()
+    
+    def person_left(self):
+        self.lock.acquire()
+        self.activity_level.people.remove_person()
+        self.lock.release()
+    
+    def add_mic_input(self, new_input):
+        self.lock.acquire()
+        self.activity_level.add_mic_input(new_input)
+        self.lock.release()
 
 def start_server(host, port):
     print("Starting server")
@@ -132,46 +95,3 @@ def start_server(host, port):
     print(f"Listening on {socket.gethostbyname(socket.gethostname())}")
     return sock
 
-def identify_client(con, server):
-    print("Identifying new client")
-    new_client = Client(con, server)
-    sensor = new_client.receive()
-    new_client.assign_sensor(sensor)
-    if new_client.name != "invalid":
-        new_client.write("OK")
-        return new_client
-    else:
-        return None
-
-def log_to_file(file, client):
-    while True:
-        msg = client.receive()
-        if msg == "" or client.quit:
-            print("Closing file")
-            file.close()
-            return
-        curr_time = "{}/{}/{}-{}:{}:{}".format(
-            time.localtime().tm_mday, time.localtime().tm_mon, time.localtime().tm_year,
-        time.localtime().tm_hour, time.localtime().tm_min, time.localtime().tm_sec)
-        data = "{},{}\n".format(curr_time, msg)
-        print(f"{client.name} writing: {data}")
-        file.write(data)
-
-def client_thread(con, server):
-    client = identify_client(con, server)
-    if client is None:
-        return
-    print("Start logging")
-    if client.sensor == "microphone":
-        print("logging to microphone.csv")
-        file = open("Log/microphone.csv", "a")
-        log_to_file(file, client)
-    elif client.sensor == "door_sensor":
-        file = open("Log/door_sensor.csv", "a")
-        log_to_file(file, client)
-    elif client.sensor == "display":
-        # TODO after interpreting average of results
-        pass
-    else:
-        # invalid input
-        return
