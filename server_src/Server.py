@@ -1,7 +1,4 @@
-import queue
 import socket
-import sys
-import time
 from ActivityLevel import *
 
 class ServerInfo:

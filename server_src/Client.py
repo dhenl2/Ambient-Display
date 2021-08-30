@@ -152,11 +152,11 @@ def sensor_client(server, client):
                 # empty queue
                 for item in msg_queue:
                     add_activity_input(server, client, item)
-                    self.log_to_file(item)
+                    client.log_to_file(item)
                 msg_queue = []
             else:
                 add_activity_input(server, client, msg)
-                self.log_to_file(msg)
+                client.log_to_file(msg)
 
 def display_client(server, client):
     # ask for new level every 3s
@@ -165,6 +165,7 @@ def display_client(server, client):
     while True:
         time.sleep(3)
         new_level = server.activity_level.get_level()
+        client.log_to_file(new_level)
         # send inc/dec from current level to new level
         # on the first command, the initial level is 1 whether its inc/dec
         while level != new_level:

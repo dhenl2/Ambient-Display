@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="PYTHON_MODULE" version="4">
   <component name="FacetManager">
+    <facet type="Python" name="Python facet">
+      <configuration sdkName="Python 3.9 (Ambient-Display)" />
+    </facet>
     <facet type="MicroPython" name="MicroPython">
       <configuration>
         <device name="ESP8266" />
@@ -15,11 +18,12 @@
       <sourceFolder url="file://$MODULE_DIR$/prototype_src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/network_src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/Server_src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/server_src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (hw)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="MicroPython" level="project" />
+    <orderEntry type="library" name="Python 3.9 (Ambient-Display) interpreter library" level="application" />
   </component>
 </module>

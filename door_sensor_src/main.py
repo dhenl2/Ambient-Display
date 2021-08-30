@@ -83,7 +83,7 @@ async def report_to_system(sensor_left, sensor_right, lock):
     async def send_msg(sock, writer, msg):
         try:
             print("Sending msg")
-            msg += '\0'
+            msg += '\n'
             msg = bytes(msg, 'utf-8')
             await writer.awrite(msg)
             return True

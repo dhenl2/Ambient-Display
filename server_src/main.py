@@ -41,12 +41,13 @@ def main():
         last_time = time.time()
         interval = 60 * 60
         while True:
-            if ((time.time() - last_time) > interval) or calibrate_now:
+            if (((time.time() - last_time) > interval) and server.activity_level.calibrate_again) or calibrate_now:
                 # pause all clients from adding new data
                 server.set_clients_pause(True)
                 server.activity_level.create_activity_levels()
                 server.set_clients_pause(False)
                 calibrate_now = False
+            time.sleep(3)
 
     signal.signal(signal.SIGINT, stop_server)
     signal.signal(signal.SIGQUIT, stop_server)
