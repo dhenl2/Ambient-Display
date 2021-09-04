@@ -36,9 +36,11 @@ class Client:
             self.log_file, self.file_date = self.assign_log_file()
 
     def log_to_file(self, msg):
+        # only log on Mon - Fri 7am to 2pm
+        if not time_to_log():
+            return
         self.check_date()
-        curr_time = "{}:{}:{}".format(
-            time.localtime().tm_hour, time.localtime().tm_min, time.localtime().tm_sec)
+        curr_time = time.strftime("%H:%M:%S")
         if self.sensor == "microphone":
             # logs microphone level received
             data = "{},{}\n".format(curr_time, msg)
@@ -46,7 +48,7 @@ class Client:
             # logs current people in the area
             people_count = self.server.activity_level.people.get_count()
             data = "{},{}\n".format(curr_time, people_count)
-        print(f"{self.name} writing: {data[:-1]}")      # omit /n from print statement
+        # print(f"{self.name} writing: {data[:-1]}")      # omit /n from print statement
         self.log_file.write(data)
 
     def receive_input(self):
@@ -75,13 +77,13 @@ class Client:
 
     def write(self, msg):
         try:
-            print("Writing msg: " + msg)
+            # print("Writing msg: " + msg)
             self.con.send(bytes(msg + "\n", 'utf-8'))
         except OSError:
             self.close()
 
     def receive(self):
-        print("Receiving msg")
+        # print("Receiving msg")
         # all sent messages are expected to end with a \n
         buffer = ""
         timeout_count = 0
@@ -91,14 +93,14 @@ class Client:
                 if msg == "\n":
                     # once a message has been read, a "received" message is sent for confirmation
                     self.write("Received")
-                    print(f"Received {buffer} from {self.name}")
+                    # print(f"Received {buffer} from {self.name}")
                     return buffer
                 if len(msg) == 0:
                     break
                 buffer += msg
                 # print(f"buffer is now {buffer}")
             except socket.timeout:
-                print("Hit socket timeout")
+                print(f"Hit socket timeout with client {self.name}")
                 timeout_count += 1
                 if timeout_count >= 5:
                     self.close()
@@ -114,6 +116,16 @@ class Client:
         self.server.remove_client(self)
         self.log_file.close()
         sys.exit()
+
+def time_to_log():
+    days_to_log = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    today = time.strftime("%A")
+    now_time = int(time.strftime("%H"))
+    if today in days_to_log and 8 <= now_time <= 14:
+        return True
+    else:
+        return False
+
 
 def identify_client(con, server):
     print("Identifying new client")
@@ -144,6 +156,8 @@ def sensor_client(server, client):
         if client.quit:
             client.close()
         msg = client.receive_input()
+        if msg == "empty":
+            continue
         if client.pause:
             # keep receiving messages whilst activity levels are being processed
             msg_queue.append(msg)
@@ -161,26 +175,14 @@ def sensor_client(server, client):
 def display_client(server, client):
     # ask for new level every 3s
     start = True
-    level = 1
     while True:
-        time.sleep(3)
+        time.sleep(5)
         new_level = server.activity_level.get_level()
         client.log_to_file(new_level)
         # send inc/dec from current level to new level
         # on the first command, the initial level is 1 whether its inc/dec
-        while level != new_level:
-            if level < new_level:
-                client.write("inc")
-                if start:
-                    start = False
-                else:
-                    level += 1
-            elif level > new_level:
-                client.write("dec")
-                if start:
-                    start = False
-                else:
-                    client -= 1
+        print(f"Changing to level {new_level}")
+        client.write(str(new_level))
 
 def client_thread(con, server):
     client = identify_client(con, server)
