@@ -1,5 +1,4 @@
 import sys
-from _thread import *
 from Server import start_server, ServerInfo
 from Client import client_thread
 from threading import Lock, Thread
@@ -18,9 +17,7 @@ def run_server(server):
         server.threads.append(thread_id)
 
 def main():
-    lock = Lock()
-    server = ServerInfo(lock)
-    calibrate_now = False
+
 
     def stop_server(signal_no, frame):
         print("Received signal " + str(signal_no))
@@ -34,26 +31,33 @@ def main():
     def time_to_calibrate(signal_no, frame):
         print("Received signal " + str(signal_no))
         print("Triggered a calibration")
-        calibrate_now = True
+        server.calibrate_now = True
 
     def routine_calibration():
-        # calibrate every 1hr or when calibrate_now is set
-        last_time = time.time()
-        interval = 60 * 60
+        shed_close = 14
         while True:
-            if (((time.time() - last_time) > interval) and server.activity_level.calibrate_again) or calibrate_now:
+            try:
+                current_hour = int(time.strftime("%H"))
+            except ValueError:
+                continue
+            if (current_hour > shed_close and server.activity_level.calibrate_again) or server.calibrate_now:
                 # pause all clients from adding new data
+                print("It's now past the shed close time. Time to calibrate")
                 server.set_clients_pause(True)
                 server.activity_level.create_activity_levels()
                 server.set_clients_pause(False)
-                calibrate_now = False
-            time.sleep(3)
+            time.sleep(60 * 60 * 3)     # run this every 3hrs
 
     signal.signal(signal.SIGINT, stop_server)
     signal.signal(signal.SIGQUIT, stop_server)
-    signal.signal(signal.SIGUSR1, routine_calibration())
+    signal.signal(signal.SIGUSR1, routine_calibration)
 
-    start_new_thread(run_server, (server, ))
+    lock = Lock()
+    server = ServerInfo(lock)
+
+    server_thread = Thread(daemon=True, target=run_server, args=(server, ))
+    # print("Starting server thread")
+    server_thread.start()
     routine_calibration()
 
 
