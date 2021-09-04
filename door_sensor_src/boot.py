@@ -23,6 +23,7 @@ station = network.WLAN(network.STA_IF)
 station.active(True)
 station.connect(ssid, password)
 
+print("Connecting to wifi")
 while station.isconnected() == False:
   pass
 

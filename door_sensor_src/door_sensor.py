@@ -117,11 +117,11 @@ async def check_for_passers(left_sensor, right_sensor, lock, server=False):
         # check which direction they've come
         if left_sensor.found_time < right_sensor.found_time:
             if server:
-                result = 1
+                result = -1
             print("Someone came from the left")
         elif left_sensor.found_time > right_sensor.found_time:
             if server:
-                result = -1
+                result = 1
             print("Someone came from the right")
         elif left_sensor.found_time == right_sensor.found_time:
             # ignore
