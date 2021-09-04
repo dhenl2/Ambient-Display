@@ -1,4 +1,6 @@
 import socket
+import time
+
 from ActivityLevel import *
 
 class ServerInfo:
@@ -10,6 +12,8 @@ class ServerInfo:
         self.door_sensor_clients = list()
         self.activity_level = ActivityLevel(self)
         self.threads = []
+        self.calibrate_now = False
+        # print("Finished constructing ServerInfo")
 
     def quit_clients(self):
         clients = [self.display_clients, self.microphone_clients, self.door_sensor_clients]
@@ -53,11 +57,12 @@ class ServerInfo:
             # server does not keep track of invalid clients
             return
 
-        for i in range(len(clients)):
-            if clients[i] == client:
-                # found same client
-                removed_client = clients.pop(i)
-                print(f"Removed client: {removed_client}")
+        if len(clients) > 0:
+            for i in range(len(clients)):
+                if clients[i] == client:
+                    # found same client
+                    removed_client = clients.pop()
+                    print(f"Removed client: {removed_client}")
     
     def set_clients_pause(self, value):
         clients = [self.door_sensor_clients, self.microphone_clients]
@@ -67,7 +72,7 @@ class ServerInfo:
     
     def person_entered(self):
         self.lock.acquire()
-        self.activity_level.people.addPerson()
+        self.activity_level.people.add_person()
         self.lock.release()
     
     def person_left(self):
@@ -82,12 +87,17 @@ class ServerInfo:
 
 def start_server(host, port):
     print("Starting server")
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        sock.bind((host, port))
-    except socket.error as e:
-        print(f"Failed to bind. Received error:\n{e}")
-        exit(1)
+    connected = False
+    sock = None
+    while not connected:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.bind((host, port))
+            connected = True
+        except socket.error as e:
+            print(f"Failed to bind. Received error:\n{e}")
+            sock.close()
+            time.sleep(3)
     sock.listen(5)
     print(f"Listening on {socket.gethostbyname(socket.gethostname())}")
     return sock
