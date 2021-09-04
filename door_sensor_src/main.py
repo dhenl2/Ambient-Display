@@ -111,14 +111,20 @@ async def report_to_system(sensor_left, sensor_right, lock):
 
     async def run_program(sock):
         print("Starting running program")
+        connection_timer = 5
+        timer = Time(utime.ticks_ms())
         while True:
             sock_reader = asyncio.StreamReader(sock)
             sock_writer = asyncio.StreamWriter(sock, {})
             await perform_handshake(sock, sock_writer, sock_reader)
             while True:
                 result = await check_for_passers(sensor_left, sensor_right, lock, True)
-                if result is not None:
-                    result = await send_msg(sock, sock_writer, result)
+                if result is None and timer.get_elapsed() > connection_timer:
+                    # send response to maintain connection
+                    result = await send_msg(sock, sock_writer, "empty")
+                    timer.start_time = utime.ticks_ms()
+                elif result is not None:
+                    result = await send_msg(sock, sock_writer, str(result))
                     if not result:
                         return
                     await receive_msg(sock, sock_reader)
@@ -163,3 +169,4 @@ def test():
 if __name__ == "__main__":
     asyncio.run(main())
     # test()
+
