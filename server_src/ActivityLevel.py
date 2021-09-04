@@ -19,47 +19,33 @@ class ActivityLevel:
         self.people = PeopleCounter()
         self.microphones = FixedQueue(3)
         self.people_levels = {}
-        self.people_mean = 0
-        self.people_std = 0
+        self.people_mean = 8.742316785
+        self.people_std = 11.35808511
         self.mic_levels = {}
-        if len(os.listdir("Log/")) > 0:
+        self.mic_mean = 59.81290416
+        self.mic_std = 3.938022299
+        self.log_file = open("Log/activity_level.csv" , "a")
+        if len(os.listdir("Log/")) > 1:
             self.create_activity_levels()
         else:
             self.set_default_levels()
-        self.mic_mean = 0
-        self.mic_std = 0
-        self.log_file = open("Log/activity_level.csv" , "a")
         self.calibrate_again = True
+        # print("Finished constructing ActivityLevels")
 
     def set_default_levels(self):
-        # preset levels so it only operates on level 1 till optimised
-        self.people_levels = {
-            1: (0, 10000),
-            2: (10000, 10001),
-            3: (10001, 10002),
-            4: (10002, 10003),
-            5: (10003, 10004),
-            6: (10004, 10005)
-        }
-        self.mic_levels = {
-            1: (0, 10000),
-            2: (10000, 10001),
-            3: (10001, 10002),
-            4: (10002, 10003),
-            5: (10003, 10004),
-            6: (10004, 10005)
-        }
+        print("Setting default levels")
+        set_levels(self.mic_levels, self.mic_mean, self.mic_std)
+        set_levels(self.people_levels, self.people_mean, self.people_std)
+        self.log_activity_levels(self.mic_levels, "Microphone", self.mic_mean, self.mic_std)
+        self.log_activity_levels(self.people_levels, "People", self.people_mean, self.people_std)
     
-    def log_activity_levels(self, levels, level_name):
-        day = time.localtime().tm_mday
-        month = time.localtime().tm_mon
-        year = time.localtime().tm_year
-        hour = time.localtime().tm_hour
-        minutes = time.localtime().tm_min
-        seconds = time.localtime().tm_sec
-        time_stamp = f"{day}-{month}-{year}-{hour}:{minutes}:{seconds}"
+    def log_activity_levels(self, levels, level_name, mean, std):
+        if not time_to_log():
+            return
+        print("Logging activity levels")
+        time_stamp = time.strftime("%d-%m-%Y-%H:%M:%S")
         # log level as time, level 1, level 2, ... , level 6
-        record = level_name + "," + time_stamp
+        record = f"{level_name},{time_stamp},{mean},{std}"
         for key in levels.keys():
             record += ","
             bounds = str(levels.get(key))
@@ -68,11 +54,15 @@ class ActivityLevel:
         record += "\n"
         self.log_file.write(record)
 
-    def create_activity_levels(self, ):
+    def create_activity_levels(self):
+        print("Creating activity levels")
+        start_time = time.time()
         # get microphone and people data
         mic_files, door_files = get_data_files()
         mic_data = get_data_from_files(mic_files)
         door_data = get_data_from_files(door_files)
+        print(f"got {len(mic_files)} mic files with {len(mic_data)} data points")
+        print(f"got {len(door_files)} door files with {len(door_data)} data points")
         # record prev mean and std and save current mean and std
         prev_mic = self.mic_mean, self.mic_std
         prev_people = self.people_mean, self.people_std
@@ -80,20 +70,28 @@ class ActivityLevel:
         self.mic_std = mic_data.std()
         self.people_mean = door_data.mean()
         self.people_std = door_data.std()
+        print(f"Mic mean and std {(self.mic_mean, self.mic_std)}")
+        print(f"Door mean and std {(self.people_mean, self.people_std)}")
         # determine levels
         set_levels(self.mic_levels, self.mic_mean, self.mic_std)
         set_levels(self.people_levels, self.people_mean, self.people_std)
-        self.log_activity_levels(self.mic_levels, "Microphone")
-        self.log_activity_levels(self.people_levels, "People")
+        self.log_activity_levels(self.mic_levels, "Microphone", self.mic_mean, self.mic_std)
+        self.log_activity_levels(self.people_levels, "People", self.people_mean, self.people_std)
         # check if calibration is the same as before
         if (within_bounds(self.mic_mean, prev_mic[0], 4) and within_bounds(self.mic_std, prev_mic[1], 4)) or \
                 (within_bounds(self.people_mean, prev_people[0], 3) and within_bounds(self.people_std, prev_people[1], 3)):
             self.calibrate_again = False
+        time_taken = time.time() - start_time
+        print(f"Taken {time_taken}s or {time_taken/60}min or {time_taken/ (60 * 60)}hrs")
 
     def get_level(self):
         people_lvl = get_level_of(self.people.get_count(), self.people_levels)
+        print(f"Got people level {people_lvl}")
         mic_lvl = get_level_of(self.get_microphone_avg(), self.mic_levels)
-        return math.floor((people_lvl + mic_lvl) / 2)
+        print(f"Got mic level {mic_lvl}")
+        level = math.floor((people_lvl + mic_lvl) / 2)
+        print(f"Got level: {level}")
+        return level
 
     def get_microphone_avg(self):
         """
@@ -133,8 +131,9 @@ class PeopleCounter:
         self.count += 1
 
     def remove_person(self):
-        self.count -= 1
-        self.people.pop()
+        if self.count > 0:
+            self.count -= 1
+            self.people.pop()
 
     def get_count(self):
         return self.count
@@ -175,12 +174,14 @@ def set_levels(levels, mean, std):
     levels[4] = ((mean + std), (mean + (2 * std)))
     levels[5] = ((mean + (2 * std)), (mean + (3 * std)))
     levels[6] = ((mean + (3 * std)), 100000000000000)
+    for key in levels.keys():
+        print(f"level: {key} is {levels.get(key)}")
 
 def get_level_of(value, level_map):
     for key in level_map.keys():
         bounds = level_map.get(key)
         if bounds[0] <= value <= bounds[1]:
-            return value
+            return key
     return 1
 
 def get_data_from_files(files):
@@ -204,9 +205,19 @@ def get_data_files():
     mic_files = []
     door_files = []
     for file in files:
-        file_split = file.split("-")
-        if file_split[3] == "microphone.csv":
-            mic_files.append(file)
-        elif file_split[3] == "door_sensor.csv":
-            door_files.append(file)
+        if not file == "activity_level.csv":
+            file_split = file.split("-")
+            if file_split[3] == "microphone.csv":
+                mic_files.append(file)
+            elif file_split[3] == "door_sensor.csv":
+                door_files.append(file)
     return mic_files, door_files
+
+def time_to_log():
+    days_to_log = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    today = time.strftime("%A")
+    now_time = int(time.strftime("%H"))
+    if today in days_to_log and 8 <= now_time <= 14:
+        return True
+    else:
+        return False
