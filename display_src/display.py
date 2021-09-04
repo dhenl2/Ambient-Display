@@ -233,33 +233,50 @@ def animation_idea_1(pin, user: UserInput):
     np = neopixel.NeoPixel(pin, 24)
 
     colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
+    levels = (1, 2, 3, 4, 5, 6)
     colours = list(zip(colours, create_blank_list(len(colours))))
     rate_list = create_rate_list(1, 0.005, len(colours))
-    colour_rate_list = list(zip(colours, rate_list))
+    colour_rate_list = list(zip(colours, rate_list, levels))
     colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
-    start_colour_rate = (GREY, BLANK), 1
+    start_colour_rate = (BLUE, BLANK), 1
 
     top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
     mid = LoopSequence(line_2, start_colour_rate[0], "middle", rate=start_colour_rate[1])
     bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
 
     command_queue = Queue(None, "commands")
+    current_level = 1
+    utime.sleep(1)
 
     while True:
         # check for user input
         await asyncio.sleep_ms(0)
         user_read = await user.read_input()
+        if user_read == "OK":
+            user.reset_input()
+            continue
 
         if user_read is not None:
             print("user_read: " + user_read)
-            if user_read == "inc":
-                n_colour, n_rate = colour_rate_list.get_next()
-                print("Adding colour %s to queue" % str(n_colour))
-                command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
-            else:
-                n_colour, n_rate = colour_rate_list.get_prev()
-                print("Adding colour %s to queue" % str(n_colour))
-                command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
+            try:
+                new_level = int(user_read)
+            except ValueError:
+                # got an invalid input, ignore
+                print("Tried to parse {" + user_read + "}")
+                user.reset_input()
+                continue
+            while current_level != new_level:
+                if new_level > current_level:
+                    n_colour, n_rate, n_level = colour_rate_list.get_next()
+                    print("Adding colour %s to queue" % str(n_colour))
+                    command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
+                    current_level += 1
+                else:
+                    n_colour, n_rate, n_level = colour_rate_list.get_prev()
+                    print("Adding colour %s to queue" % str(n_colour))
+                    command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
+                    current_level -= 1
+
             if command_queue.get_size() == 1:
                 # start queue
                 start_colour_rate, start_rows = command_queue.get_first()
