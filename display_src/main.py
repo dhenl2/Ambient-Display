@@ -3,6 +3,7 @@ import display as dp
 from machine import Pin
 import uasyncio as asyncio
 from uasyncio import Lock
+import network
 try:
     import usocket as socket
 except:
