@@ -228,66 +228,75 @@ def cycle_rows(rows, np):
             else:
                 turn_on(np, row.pixels.get_next(), row.colours.get_current())
 
+def turn_display_off(np, pixel_count):
+    for pixel in range(pixel_count):
+        np[pixel] = (0, 0, 0)
+    np.write()
 
 def animation_idea_1(pin, user: UserInput):
-    np = neopixel.NeoPixel(pin, 24)
-
-    colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
-    levels = (1, 2, 3, 4, 5, 6)
-    colours = list(zip(colours, create_blank_list(len(colours))))
-    rate_list = create_rate_list(1, 0.005, len(colours))
-    colour_rate_list = list(zip(colours, rate_list, levels))
-    colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
-    start_colour_rate = (BLUE, BLANK), 1
-
-    top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
-    mid = LoopSequence(line_2, start_colour_rate[0], "middle", rate=start_colour_rate[1])
-    bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
-
-    command_queue = Queue(None, "commands")
-    current_level = 1
-    utime.sleep(1)
-
     while True:
-        # check for user input
-        await asyncio.sleep_ms(0)
-        user_read = await user.read_input()
-        if user_read == "OK":
-            user.reset_input()
-            continue
+        try:
+            np = neopixel.NeoPixel(pin, 24)
 
-        if user_read is not None:
-            print("user_read: " + user_read)
-            try:
-                new_level = int(user_read)
-            except ValueError:
-                # got an invalid input, ignore
-                print("Tried to parse {" + user_read + "}")
+            colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
+            levels = (1, 2, 3, 4, 5, 6)
+            colours = list(zip(colours, create_blank_list(len(colours))))
+            rate_list = create_rate_list(1, 0.005, len(colours))
+            colour_rate_list = list(zip(colours, rate_list, levels))
+            colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
+            start_colour_rate = (BLUE, BLANK), 1
+
+            top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
+            mid = LoopSequence(line_2, start_colour_rate[0], "middle", rate=start_colour_rate[1])
+            bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
+
+            command_queue = Queue(None, "commands")
+            current_level = 1
+            utime.sleep(1)
+
+            while True:
+                # check for user input
+                await asyncio.sleep_ms(0)
+                user_read = await user.read_input()
                 user.reset_input()
-                continue
-            while current_level != new_level:
-                if new_level > current_level:
-                    n_colour, n_rate, n_level = colour_rate_list.get_next()
-                    print("Adding colour %s to queue" % str(n_colour))
-                    command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
-                    current_level += 1
-                else:
-                    n_colour, n_rate, n_level = colour_rate_list.get_prev()
-                    print("Adding colour %s to queue" % str(n_colour))
-                    command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
-                    current_level -= 1
+                if user_read == "OK":
+                    continue
 
-            if command_queue.get_size() == 1:
-                # start queue
-                start_colour_rate, start_rows = command_queue.get_first()
-                start_colour, start_rate = start_colour_rate
-                start_row = start_rows.get_first()
-                command_queue.start = False
-                start_row.set_color_rate(start_colour, start_rate)
-            await user.reset_input()
+                if user_read is not None:
+                    try:
+                        print("user_read: " + user_read)
+                        new_level = int(user_read)
 
-        check_colour_pass(command_queue)
-        cycle_rows((top, mid, bot), np)
+                    except ValueError:
+                        # got an invalid input, ignore
+                        print("Tried to parse {" + user_read + "}")
+                        continue
+                    while current_level != new_level:
+                        print("current level: " + str(current_level))
+                        if new_level > current_level:
+                            n_colour, n_rate, n_level = colour_rate_list.get_next()
+                            print("Adding colour %s to queue" % str(n_colour))
+                            command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
+                            current_level += 1
+                        else:
+                            n_colour, n_rate, n_level = colour_rate_list.get_prev()
+                            print("Adding colour %s to queue" % str(n_colour))
+                            command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
+                            current_level -= 1
+
+                    if command_queue.get_size() == 1:
+                        # start queue
+                        start_colour_rate, start_rows = command_queue.get_first()
+                        start_colour, start_rate = start_colour_rate
+                        start_row = start_rows.get_first()
+                        command_queue.start = False
+                        start_row.set_color_rate(start_colour, start_rate)
+                    await user.reset_input()
+
+                check_colour_pass(command_queue)
+                cycle_rows((top, mid, bot), np)
+        except:
+            continue
 
 
 def run_circle(pin):
