@@ -13,7 +13,7 @@ class ServerInfo:
         self.activity_level = ActivityLevel(self)
         self.threads = []
         self.calibrate_now = False
-        # print("Finished constructing ServerInfo")
+        self.stop_displays = False
 
     def quit_clients(self):
         clients = [self.display_clients, self.microphone_clients, self.door_sensor_clients]
@@ -25,6 +25,13 @@ class ServerInfo:
         self.lock.acquire()
         self.count += amount
         self.lock.release()
+
+    def set_display_clients(self, value):
+        print(len(self.display_clients))
+        self.stop_displays = value
+        if len(self.display_clients) > 0:
+            for client in self.display_clients:
+                client.pause = value
 
     def add_client(self, client):
         num = 0
@@ -57,12 +64,9 @@ class ServerInfo:
             # server does not keep track of invalid clients
             return
 
-        if len(clients) > 0:
-            for i in range(len(clients)):
-                if clients[i] == client:
-                    # found same client
-                    removed_client = clients.pop()
-                    print(f"Removed client: {removed_client}")
+        if client in clients:
+            index = clients.index(client)
+            clients.pop(index)
     
     def set_clients_pause(self, value):
         clients = [self.door_sensor_clients, self.microphone_clients]
