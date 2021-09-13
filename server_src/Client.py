@@ -3,6 +3,8 @@ import socket
 import sys
 from Server import ServerInfo
 
+directory = "/home/pi/Python/Log/"
+
 class Client:
     def __init__(self, con, server):
         self.sensor = ""
@@ -12,6 +14,7 @@ class Client:
         self.server = server
         self.quit = False
         self.log_file = None
+        self.log_opened = None
         self.file_date = None
         self.pause = False
 
@@ -21,9 +24,11 @@ class Client:
         year = time.localtime().tm_year
         today_date = f"{day}-{month}-{year}"
         filename = today_date + "-" + self.sensor + ".csv"
-        directory = "Log/"
+        # print(f"{self.name}'s log files is: {filename}")
         file = open(directory + filename, "a")
-        return file, today_date
+        self.log_opened = time.time()
+        self.file_date = today_date
+        self.log_file = file
 
     def check_date(self):
         day = time.localtime().tm_mday
@@ -33,13 +38,22 @@ class Client:
         if today_date != self.file_date:
             # its now the next day. Start another log file
             self.log_file.close()
-            self.log_file, self.file_date = self.assign_log_file()
+            self.assign_log_file()
+
+    def save_log(self):
+        elapsed = time.time() - self.log_opened
+        # save log file every 20s
+        if elapsed > 20:
+            print("Saving log file")
+            self.log_file.close()
+            self.assign_log_file()
 
     def log_to_file(self, msg):
         # only log on Mon - Fri 7am to 2pm
         if not time_to_log():
             return
         self.check_date()
+        self.save_log()
         curr_time = time.strftime("%H:%M:%S")
         if self.sensor == "microphone":
             # logs microphone level received
@@ -62,8 +76,10 @@ class Client:
 
     def assign_sensor(self, sensor):
         self.sensor = sensor
+        if self.sensor == "display" and self.server.stop_displays:
+            self.pause = True
         self.assign_name(self.server)
-        self.log_file, self.file_date = self.assign_log_file()
+        self.assign_log_file()
 
     def assign_name(self, server):
         print("Assigning name")
@@ -109,12 +125,20 @@ class Client:
             except socket.error:
                 self.close()
                 return ""
+            except ConnectionResetError:
+                print("Connection reset")
+                self.close()
+                return ""
 
     def close(self):
         print(f"{self.name} has disconnected. Severing connection")
         self.con.close()
         self.server.remove_client(self)
-        self.log_file.close()
+        try:
+            self.log_file.close()
+        except AttributeError:
+            # haven't created a log file
+            pass
         sys.exit()
 
 def time_to_log():
@@ -177,6 +201,10 @@ def display_client(server, client):
     start = True
     while True:
         time.sleep(5)
+        if client.pause:
+            print("sending STOP")
+            client.write("STOP")
+            continue
         new_level = server.activity_level.get_level()
         client.log_to_file(new_level)
         # send inc/dec from current level to new level
