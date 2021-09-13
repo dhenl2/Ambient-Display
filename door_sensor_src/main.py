@@ -5,6 +5,7 @@ import gc
 from hcsr04 import HCSR04
 import utime
 import usocket as socket
+import network
 
 async def write_data(file, left_sensor, right_sensor, time, header=False):
     left_distance = right_distance = None
@@ -62,6 +63,13 @@ async def record_log(duration, frequency, sensor_left, sensor_right, lock):
 async def report_to_system(sensor_left, sensor_right, lock):
     server = '192.168.7.1'
     port = 8123
+
+    async def connect_wifi(station):
+        ssid = 'AmbientDisplay'
+        password = 'Password.1'
+        station.connect(ssid, password)
+        while not station.isconnected():
+            pass
 
     async def connect():
         print("Trying to connect to server " + server)
@@ -130,7 +138,11 @@ async def report_to_system(sensor_left, sensor_right, lock):
                     await receive_msg(sock, sock_reader)
                 await asyncio.sleep_ms(0)
 
+    station = network.WLAN(network.STA_IF)
+    station.active(True)
     while True:
+        if not station.isconnected():
+            await connect_wifi(station)
         con = await connect()
         while con is None:
             con = await connect()
