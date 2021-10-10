@@ -64,7 +64,8 @@ async def report_to_system(sensor_left, sensor_right, lock):
     server = '192.168.7.1'
     port = 8123
 
-    async def connect_wifi(station):
+    async def connect_wifi():
+        print("Connecting to WIFI")
         ssid = 'AmbientDisplay'
         password = 'Password.1'
         station.connect(ssid, password)
@@ -130,6 +131,9 @@ async def report_to_system(sensor_left, sensor_right, lock):
                 if result is None and timer.get_elapsed() > connection_timer:
                     # send response to maintain connection
                     result = await send_msg(sock, sock_writer, "empty")
+                    if not result:
+                        return
+                    await receive_msg(sock, sock_reader)
                     timer.start_time = utime.ticks_ms()
                 elif result is not None:
                     result = await send_msg(sock, sock_writer, str(result))
@@ -142,7 +146,9 @@ async def report_to_system(sensor_left, sensor_right, lock):
     station.active(True)
     while True:
         if not station.isconnected():
-            await connect_wifi(station)
+            print("WIFI not connected")
+            await connect_wifi()
+        print("WIFI is connected")
         con = await connect()
         while con is None:
             con = await connect()
