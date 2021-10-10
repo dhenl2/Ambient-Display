@@ -62,22 +62,25 @@ def main():
         start_timer = time.time()
         leave_on = False
         while True:
-            if shed_closed() or not leave_on:
-                print(f"closing shed")
-                server.set_display_clients(False)
-                if server.activity_level.calibrate_again and log_files_available() or server.calibrate_now:
-                    # pause all clients from adding new data
-                    print("It's now past the shed close time. Time to calibrate")
-                    server.set_clients_pause(True)
-                    server.activity_level.create_activity_levels()
-                    server.set_clients_pause(False)
+            # if shed_closed() or not leave_on:
+            #     print(f"closing shed")
+            #     server.set_display_clients(False)
+            #     if server.activity_level.calibrate_again and log_files_available() or server.calibrate_now:
+            #         # pause all clients from adding new data
+            #         print("It's now past the shed close time. Time to calibrate")
+            #         server.set_clients_pause(True)
+            #         server.activity_level.create_activity_levels()
+            #         server.set_clients_pause(False)
             # elif shed_is_open():
             # print(f"Current timer: {time.time() - start_timer}")
             # if time.time() - start_timer > 30:
             #     print("opening shed")
             #     server.set_display_clients(True)
             #     leave_on = True
-            time.sleep(60 * 60 * 2)     # run this every 3hrs
+            time.sleep(20)     # run this every 3hrs
+            server.set_clients_pause(True)
+            server.activity_level.create_activity_levels()
+            server.set_clients_pause(False)
 
     signal.signal(signal.SIGINT, stop_server)
     signal.signal(signal.SIGQUIT, stop_server)
