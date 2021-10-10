@@ -3,7 +3,6 @@ import uasyncio as asyncio
 import usocket as socket
 import utime
 
-
 async def report_to_system():
     server = '192.168.7.1'
     port = 8123

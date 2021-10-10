@@ -69,6 +69,7 @@ class ServerInfo:
             clients.pop(index)
     
     def set_clients_pause(self, value):
+        print("Setting clients to " + str(value))
         clients = [self.door_sensor_clients, self.microphone_clients]
         for client_type in clients:
             for client in client_type:
