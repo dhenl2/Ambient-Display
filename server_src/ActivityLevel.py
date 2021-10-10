@@ -19,7 +19,7 @@ class ActivityLevel:
     def __init__(self, server):
         self.server = server
         self.people = PeopleCounter()
-        self.microphones = FixedQueue(3)
+        self.microphones = FixedQueue(10)
         self.people_levels = {}
         self.people_mean = 8.742316785
         self.people_std = 11.35808511
@@ -102,7 +102,7 @@ class ActivityLevel:
         if not calibrate_mic and not calibrate_people:
             self.calibrate_again = False
         time_taken = time.time() - start_time
-        print(f"Taken {time_taken}s or {time_taken/60}min or {time_taken/ (60 * 60)}hrs")
+        print(f"Taken {time_taken:.2f}s")
 
     def log_level(self, level):
         time_stamp = time.strftime("%d-%m-%Y-%H:%M:%S")
@@ -115,25 +115,20 @@ class ActivityLevel:
         print(f"Got people level {people_lvl} with {self.people.get_count()}")
         mic_lvl = get_level_of(self.get_microphone_avg(), self.mic_levels)
         print(f"Got mic level {mic_lvl} with {self.get_microphone_avg()}")
-        level = math.floor((people_lvl + mic_lvl) / 2)
+        if people_lvl > (mic_lvl + 1):
+            # there's a chance the people level is inaccurate so rely on mic data
+            level = mic_lvl
+        else:
+            level = math.floor((mic_lvl + people_lvl) / 2)
         print(f"Got level: {level}")
         self.log_level(level)
         return level
 
     def get_microphone_avg(self):
         """
-        Gets the average of the 2 largest and latest microphone outputs
+        Gets the max value in the current queue
         """
-        least = 100000000
-        total = 0
-        # sum all items
-        for output in self.microphones.queue:
-            if output < least:
-                least = output
-            total += output
-        # remove least item to average the two largest
-        total -= least
-        return total / 2
+        return max(self.microphones.queue)
 
     def add_mic_input(self, new_input):
         new_input = float(new_input)
@@ -142,7 +137,7 @@ class ActivityLevel:
 class Person:
     def __init__(self):
         self.start_time = time.time()
-        self.max_time = 3600    # 1hr
+        self.max_time = 60 * 45    # 45min
 
     def is_expired(self):
         delta = time.time() - self.start_time
@@ -152,10 +147,13 @@ class PeopleCounter:
     def __init__(self):
         self.people = []
         self.count = 0
+        self.max_people = 50
 
     def add_person(self):
         self.people.append(Person())
         self.count += 1
+        if self.count > self.max_people:
+            self.remove_person()
 
     def remove_person(self):
         if self.count > 0:
@@ -195,12 +193,12 @@ def set_levels(levels, mean, std):
     4 to 6 are ascending levels of excessive activity.
     """
     # set bounds of each level
-    levels[1] = (0, max(0, mean - (2 * std)))
-    levels[2] = (mean - (2 * std), (mean - std))
-    levels[3] = ((mean - std), (mean + std))
-    levels[4] = ((mean + std), (mean + (2 * std)))
-    levels[5] = ((mean + (2 * std)), (mean + (3 * std)))
-    levels[6] = ((mean + (3 * std)), 100000000000000)
+    levels[1] = (0, max(0, mean - (1.5 * std)))
+    levels[2] = (mean - (1.5 * std), (mean - (std * 0.7)))
+    levels[3] = ((mean - (std * 0.7)), (mean + (std * 0.7)))
+    levels[4] = ((mean + (std * 0.7)), (mean + (1.5 * std)))
+    levels[5] = ((mean + (1.5 * std)), (mean + (2.2 * std)))
+    levels[6] = ((mean + (2.2 * std)), 100000000000000)
     for key in levels.keys():
         print(f"level: {key} is {levels.get(key)}")
 
