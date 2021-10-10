@@ -3,14 +3,7 @@ import time
 import utime
 import uasyncio as asyncio
 from main import UserInput
-
-class Colour:
-    def __init__(self, rgb, name):
-        self.rgb = rgb
-        self.name = name
-
-    def __repr__(self):
-        return self.name
+from Classes import Queue, LoopSequence, Colour
 
 # Colours
 RED = Colour((255, 0, 0), "red")
@@ -35,128 +28,6 @@ line_1 = [[None], [22], [23, 19], [18], [17, 15], [16], [None]]
 line_2 = [[21], [20, 12], [13], [14, 9], [8], [7, 5], [6]]
 line_3 = [[None], [11], [10, 2], [3], [4, 1], [0], [None]]
 
-
-class Time:
-    def __init__(self):
-        self.prev_time = 0
-        self.curr_time = 0
-        self.start_time = utime.ticks_ms()
-
-    def get_dt(self):
-        self.curr_time = utime.ticks_ms()
-        return (self.curr_time - self.prev_time) / 1000
-
-    def get_elapsed(self):
-        self.curr_time = utime.ticks_ms()
-        return (self.curr_time - self.start_time) / 1000
-
-    def start_timer(self):
-        self.prev_time = utime.ticks_ms()
-
-
-class Queue:
-    def __init__(self, items, name, restrict=False):
-        if items is None:
-            self.items = list()
-        else:
-            self.items = items
-        self.index = 0
-        self.restrict = restrict
-        self.start = True
-        self.name = name
-
-    def __repr__(self):
-        return "Queue: " + str(self.items)
-
-    def get_next(self):
-        if self.start:
-            self.start = False
-            return self.items[0]
-
-        self.index += 1
-        if self.index == len(self.items):
-            if self.restrict:
-                self.index -= 1
-            else:
-                self.index = 0
-        return self.items[self.index]
-
-    def get_prev(self):
-        if self.start:
-            self.start = False
-            return self.items[0]
-
-        self.index -= 1
-        if self.index == -1:
-            if self.restrict:
-                self.index = 0
-            else:
-                self.index = len(self.items) - 1
-        return self.items[self.index]
-
-    def get_after_next(self):
-        return self.items[self.index + 1]
-
-    def get_current(self):
-        return self.items[self.index]
-
-    def get_first(self):
-        return self.items[0]
-
-    def at_start_index(self):
-        if self.index == 0:
-            return True
-        else:
-            return False
-
-    def at_last_index(self):
-        if self.index == (len(self.items) - 1):
-            return True
-        else:
-            return False
-
-    def add_item(self, item):
-        self.items.append(item)
-        # print("\titems in %s is now %s" % (self.name, self.items))
-
-    def pop(self):
-        popped = self.items.pop(0)
-
-    def get_size(self):
-        return len(self.items)
-
-    def restart(self):
-        self.index = 0
-        self.start = True
-
-
-class LoopSequence:
-    def __init__(self, pixels, colours, name, rate=1):
-        self.pixels = Queue(pixels, "pixels")
-        self.colours = Queue(colours, "colours")
-        self.name = name
-        self.rate = rate
-        self.time = Time()
-
-    def __repr__(self):
-        print("LoopSequence: " + self.name)
-
-    def set_color_rate(self, colours, rate):
-        self.colours = Queue(colours, "colours")
-        self.rate = rate
-
-    def completed_cycle(self):
-        if self.pixels.at_last_index() and self.colours.at_last_index():
-            return True
-        else:
-            return False
-
-    def time_to_cycle(self):
-        if self.time.get_dt() > self.rate:
-            self.time.prev_time = utime.ticks_ms()
-            return True
-        else:
-            return False
 
 def turn_on(np, stage, colour):
     for pixel in stage:
@@ -196,29 +67,39 @@ def create_blank_list(num):
         blanks.append(BLANK)
     return blanks
 
-def do_row_cycle(main_queue, queue):
+def do_row_cycle(main_queue, queue, colours):
     colour_rate, row_queue = queue
     if row_queue.get_current().completed_cycle():
-        print("row %s completed a cycle" % row_queue.get_current().name)
+        # print("row %s completed a cycle" % row_queue.get_current().name)
+        colour, rate = colour_rate
         if row_queue.at_last_index():
             # cycled colour through all rows, time to remove
-            print("\trow colour cycled through ")
+            print("\trow {row}, {colour} cycled through".format(row=row_queue.name, colour=colour_rate[0]))
             main_queue.pop()
+            if colour[0].priority:
+                make_only_priority(colours, None)
+            print("Removing from command queue")
+            print("Command Queue (" + str(main_queue.get_size()) + "): " + str(main_queue))
             # row_queue.restart()
         else:
             # pass colour onto next row
             row = row_queue.get_next()
-            colour, rate = colour_rate
-            print("\tSetting colour %s to row %s" % (str(colour), row.name))
-            row.set_color_rate(colour, rate)
+            if not row.contains_priority():
+                print("\tSetting colour %s to row %s" % (str(colour), row.name))
+                row.set_color_rate(colour, rate)
 
-def check_colour_pass(queue):
+def check_colour_pass(queue: Queue, colours):
     # check if there are items in the colour queue to cycle thru
     if queue.get_size() != 0:
-        do_row_cycle(queue, queue.get_current())
+        do_row_cycle(queue, queue.get_current(), colours)
         if queue.get_size() > 1:
+            if queue.get_size() > 2:
+                # update the next in line
+                queue.move_item_forward(queue.items[2])
+                queue.get_after_next()[1].restart()
             # start next in line
-            do_row_cycle(queue, queue.get_after_next())
+            # print("get_after_next(): " + str(queue.get_after_next()))
+            do_row_cycle(queue, queue.get_after_next(), colours)
 
 def cycle_rows(rows, np):
     for row in rows:
@@ -233,70 +114,84 @@ def turn_display_off(np, pixel_count):
         np[pixel] = (0, 0, 0)
     np.write()
 
+def make_only_priority(colours, colour):
+    print("make only priority " + str(colour))
+    for col in colours:
+        col.remove_priority()
+    if colour is not None:
+        colour.make_priority()
+
 def animation_idea_1(pin, user: UserInput):
+    # while True:
+    #     try:
+    np = neopixel.NeoPixel(pin, 24)
+
+    og_colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
+    levels = (1, 2, 3, 4, 5, 6)
+    colours = list(zip(og_colours, create_blank_list(len(og_colours))))
+    rate_list = create_rate_list(1, 0.0005, len(colours))
+    colour_rate_list = list(zip(colours, rate_list, levels))
+    colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
+    start_colour_rate = (BLUE, BLANK), 1
+
+    top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
+    mid = LoopSequence(line_2, start_colour_rate[0], "middle", rate=start_colour_rate[1])
+    bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
+
+    command_queue = Queue(None, "commands", max_size=4)
+    current_level = 1
+    utime.sleep(1)
+
     while True:
-        try:
-            np = neopixel.NeoPixel(pin, 24)
-
-            colours = (BLUE, LIGHT_BLUE, GREEN, YELLOW, ORANGE, RED)
-            levels = (1, 2, 3, 4, 5, 6)
-            colours = list(zip(colours, create_blank_list(len(colours))))
-            rate_list = create_rate_list(1, 0.005, len(colours))
-            colour_rate_list = list(zip(colours, rate_list, levels))
-            colour_rate_list = Queue(colour_rate_list, "colour_rate", restrict=True)
-            start_colour_rate = (BLUE, BLANK), 1
-
-            top = LoopSequence(line_1, start_colour_rate[0], "top", rate=start_colour_rate[1])
-            mid = LoopSequence(line_2, start_colour_rate[0], "middle", rate=start_colour_rate[1])
-            bot = LoopSequence(line_3, start_colour_rate[0], "bottom", rate=start_colour_rate[1])
-
-            command_queue = Queue(None, "commands")
-            current_level = 1
-            utime.sleep(1)
-
-            while True:
-                # check for user input
-                await asyncio.sleep_ms(0)
-                user_read = await user.read_input()
-                user.reset_input()
-                if user_read == "OK":
-                    continue
-
-                if user_read is not None:
-                    try:
-                        print("user_read: " + user_read)
-                        new_level = int(user_read)
-
-                    except ValueError:
-                        # got an invalid input, ignore
-                        print("Tried to parse {" + user_read + "}")
-                        continue
-                    while current_level != new_level:
-                        print("current level: " + str(current_level))
-                        if new_level > current_level:
-                            n_colour, n_rate, n_level = colour_rate_list.get_next()
-                            print("Adding colour %s to queue" % str(n_colour))
-                            command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
-                            current_level += 1
-                        else:
-                            n_colour, n_rate, n_level = colour_rate_list.get_prev()
-                            print("Adding colour %s to queue" % str(n_colour))
-                            command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
-                            current_level -= 1
-
-                    if command_queue.get_size() == 1:
-                        # start queue
-                        start_colour_rate, start_rows = command_queue.get_first()
-                        start_colour, start_rate = start_colour_rate
-                        start_row = start_rows.get_first()
-                        command_queue.start = False
-                        start_row.set_color_rate(start_colour, start_rate)
-                    await user.reset_input()
-
-                check_colour_pass(command_queue)
-                cycle_rows((top, mid, bot), np)
-        except:
+        # check for user input
+        await asyncio.sleep_ms(0)
+        user_read = await user.read_input()
+        user.reset_input()
+        if user_read == "OK":
             continue
+
+        if user_read is not None:
+            try:
+                # print("user_read: " + user_read)
+                new_level = int(user_read)
+
+            except ValueError:
+                # got an invalid input, ignore
+                print("Tried to parse {" + user_read + "}")
+                continue
+            if new_level not in levels:
+                continue
+            print("Command Queue (" + str(command_queue.get_size()) + "): " + str(command_queue))
+            print("current level: " + str(current_level) + " new level " + str(new_level))
+            while current_level != new_level:
+                print("current level: " + str(current_level))
+                if new_level > current_level:
+                    n_colour, n_rate, n_level = colour_rate_list.get_next()
+                    print("Adding colour %s to queue" % str(n_colour))
+                    command_queue.add_item(((n_colour, n_rate), Queue((bot, mid, top), "inc_row")))
+                    print("Command Queue (" + str(command_queue.get_size()) + "): " + str(command_queue))
+                    current_level = n_level
+                else:
+                    n_colour, n_rate, n_level = colour_rate_list.get_prev()
+                    print("Adding colour %s to queue" % str(n_colour))
+                    command_queue.add_item(((n_colour, n_rate), Queue((top, mid, bot), "dec_row")))
+                    print("Command Queue (" + str(command_queue.get_size()) + "): " + str(command_queue))
+                    current_level = n_level
+                make_only_priority(og_colours, n_colour[0])
+
+            if command_queue.get_size() == 1:
+                # start queue
+                start_colour_rate, start_rows = command_queue.get_first()
+                start_colour, start_rate = start_colour_rate
+                start_row = start_rows.get_first()
+                command_queue.start = False
+                start_row.set_color_rate(start_colour, start_rate)
+            await user.reset_input()
+
+        check_colour_pass(command_queue, og_colours)
+        cycle_rows((top, mid, bot), np)
+        # except:
+        #     continue
 
 
 def run_circle(pin):
