@@ -24,7 +24,7 @@ class Client:
         year = time.localtime().tm_year
         today_date = f"{day}-{month}-{year}"
         filename = today_date + "-" + self.sensor + ".csv"
-        # print(f"{self.name}'s log files is: {filename}")
+        print(f"{self.name}'s log files is: {filename}")
         file = open(directory + filename, "a")
         self.log_opened = time.time()
         self.file_date = today_date
@@ -50,8 +50,8 @@ class Client:
 
     def log_to_file(self, msg):
         # only log on Mon - Fri 7am to 2pm
-        if not time_to_log():
-            return
+        # if not time_to_log():
+        #     return
         self.check_date()
         self.save_log()
         curr_time = time.strftime("%H:%M:%S")
@@ -197,10 +197,10 @@ def sensor_client(server, client):
                 client.log_to_file(msg)
 
 def display_client(server, client):
-    # ask for new level every 3s
+    # ask for new level every 2s
     start = True
     while True:
-        time.sleep(5)
+        time.sleep(2)
         if client.pause:
             print("sending STOP")
             client.write("STOP")
