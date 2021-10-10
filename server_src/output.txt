@@ -1,696 +1,151 @@
-Got 10 log files: True
+Got 18 log files: True
 Creating activity levels
-got 4 mic files with 82799 data points
-Mic mean and std (64.15203452094832, 5.244771805605699)
-level: 1 is (0, 53.662490909736924)
-level: 2 is (53.662490909736924, 58.90726271534262)
-level: 3 is (58.90726271534262, 69.39680632655401)
-level: 4 is (69.39680632655401, 74.64157813215972)
-level: 5 is (74.64157813215972, 79.88634993776542)
-level: 6 is (79.88634993776542, 100000000000000)
-Setting default for door levels
+got 6 mic files with 357436 data points
+Mic mean and std (62.53977560514332, 5.210291229619739)
+level: 1 is (0, 54.72433876071371)
+level: 2 is (54.72433876071371, 58.8925717444095)
+level: 3 is (58.8925717444095, 66.18697946587713)
+level: 4 is (66.18697946587713, 70.35521244957293)
+level: 5 is (70.35521244957293, 74.00241631030674)
+level: 6 is (74.00241631030674, 100000000000000)
+got 4 door files with 2429 data points
+Door mean and std (22.510498147385757, 16.91702295997803)
 level: 1 is (0, 0)
-level: 2 is (-13.973853434999999, -2.6157683249999995)
-level: 3 is (-2.6157683249999995, 20.100401894999997)
-level: 4 is (20.100401894999997, 31.458487005)
-level: 5 is (31.458487005, 42.816572115)
-level: 6 is (42.816572115, 100000000000000)
-Taken 0.713425874710083s or 0.01189043124516805min or 0.00019817385408613417hrs
-Starting serverclosing shed
-
-0
-It's now past the shed close time. Time to calibrate
-Creating activity levels
+level: 2 is (-2.8650362925812907, 10.668582075401137)
+level: 3 is (10.668582075401137, 34.352414219370374)
+level: 4 is (34.352414219370374, 47.8860325873528)
+level: 5 is (47.8860325873528, 59.72794865933743)
+level: 6 is (59.72794865933743, 100000000000000)
+Taken 4.11s
+Starting server
 Listening on 127.0.1.1
 Waiting for a connection...
-got 4 mic files with 82799 data points
-Mic mean and std (64.15203452094832, 5.244771805605699)
-level: 1 is (0, 53.662490909736924)
-level: 2 is (53.662490909736924, 58.90726271534262)
-level: 3 is (58.90726271534262, 69.39680632655401)
-level: 4 is (69.39680632655401, 74.64157813215972)
-level: 5 is (74.64157813215972, 79.88634993776542)
-level: 6 is (79.88634993776542, 100000000000000)
-Setting default for door levels
-level: 1 is (0, 0)
-level: 2 is (-13.973853434999999, -2.6157683249999995)
-level: 3 is (-2.6157683249999995, 20.100401894999997)
-level: 4 is (20.100401894999997, 31.458487005)
-level: 5 is (31.458487005, 42.816572115)
-level: 6 is (42.816572115, 100000000000000)
-Taken 0.5264573097229004s or 0.008774288495381673min or 0.00014623814158969456hrs
-Connected to ('192.168.7.18', 6467)
+Connected to ('192.168.7.13', 21770)
+Identifying new clientWaiting for a connection...
+
+Connected to ('192.168.7.30', 10144)
+Identifying new clientWaiting for a connection...
+
+Connected to ('192.168.7.36', 2694)
 Identifying new clientWaiting for a connection...
 
 Assigning name
+Adding door_sensor client
+Client assigned name: door_sensor (1)
+door_sensor (1)'s log files is: 13-9-2021-door_sensor.csv
+Start collecting data
+Assigning name
+Adding door_sensor client
+Client assigned name: door_sensor (2)
+door_sensor (2)'s log files is: 13-9-2021-door_sensor.csv
+Start collecting data
+Assigning name
 Adding microphone client
 Client assigned name: microphone (1)
+microphone (1)'s log files is: 13-9-2021-microphone.csv
 Start collecting data
-Connected to ('192.168.7.36', 16029)
+Connected to ('192.168.7.18', 9049)
 Identifying new clientWaiting for a connection...
 
 Assigning name
 Adding microphone client
 Client assigned name: microphone (2)
+microphone (2)'s log files is: 13-9-2021-microphone.csv
 Start collecting data
-Connected to ('192.168.7.39', 31295)
+Connected to ('192.168.7.39', 2216)
 Identifying new clientWaiting for a connection...
 
 Assigning name
 Adding display client
 Client assigned name: display (1)
+display (1)'s log files is: 13-9-2021-display.csv
 Got people level 1 with 0
-Got mic level 3 with 59.05105
+Got mic level 4 with 66.804
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 62.29639999999999
+Got mic level 4 with 66.804
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 62.61775
+Got mic level 3 with 66.1686
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 59.57444999999999
+Got mic level 3 with 64.7388
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 1 with 52.693200000000004
-Got level: 1
-Changing to level 1
-Connected to ('192.168.7.18', 30785)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (3)
-Start collecting data
-Hit socket timeout with client microphone (1)
-Got people level 1 with 0
-Got mic level 3 with 60.03189999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.290099999999995
-Got level: 1
-Changing to level 1
-Hit socket timeout with client microphone (1)
-Got people level 1 with 0
-Got mic level 2 with 57.9281
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 58.803399999999996
-Got level: 1
-Changing to level 1
-Hit socket timeout with client microphone (1)
-microphone (3) has disconnected. Severing connection
-Removing client
-Got people level 1 with 0
-Got mic level 2 with 55.38164999999999
-Got level: 1
-Changing to level 1
-Connected to ('192.168.7.18', 13125)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (3)
-Start collecting data
-Got people level 1 with 0
-Got mic level 3 with 64.26894999999999
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (1)
-Got people level 1 with 0
-Got mic level 3 with 62.730999999999995
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.28169999999999
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (1)
-microphone (1) has disconnected. Severing connection
-Removing client
-Got people level 1 with 0
-Got mic level 3 with 58.9203
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.492599999999996
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 64.5449
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 60.107
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.52945
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 53.72729999999999
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 1 with 51.508849999999995
-Got level: 1
-Changing to level 1
-Connected to ('192.168.7.18', 8813)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (3)
-Start collecting data
-Hit socket timeout with client microphone (3)
-Got people level 1 with 0
-Got mic level 2 with 58.5303
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 63.8742
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (3)
-Got people level 1 with 0
-Got mic level 3 with 65.62635
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 61.89224999999999
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (3)
-Got people level 1 with 0
-Got mic level 3 with 63.099450000000004
-Got level: 2
-Changing to level 2
-Connected to ('192.168.7.36', 31869)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (4)
-Start collecting data
-Got people level 1 with 0
-Got mic level 3 with 64.02709999999999
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (2)
-Hit socket timeout with client microphone (3)
-Got people level 1 with 0
-Got mic level 3 with 65.18860000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.58134999999999
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (2)
-Hit socket timeout with client microphone (3)
-microphone (3) has disconnected. Severing connection
-Removing client
-Got people level 1 with 0
-Got mic level 3 with 64.8744
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 65.1426
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (2)
-Got people level 1 with 0
-Got mic level 3 with 63.34335
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 60.296400000000006
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (2)
-Got people level 1 with 0
-Got mic level 1 with 51.60645
-Got level: 1
-Changing to level 1
-microphone (3) has disconnected. Severing connection
-Removing client
-Connected to ('192.168.7.18', 24644)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (3)
-Start collecting data
-Got people level 1 with 0
-Got mic level 3 with 64.80749999999999
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (2)
-microphone (2) has disconnected. Severing connection
-Removing client
-Got people level 1 with 0
-Got mic level 3 with 65.72885000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 65.40769999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 1 with 53.0376
-Got level: 1
-Changing to level 1
-microphone (3) has disconnected. Severing connection
-Removing client
-Connected to ('192.168.7.18', 14559)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (2)
-Start collecting data
-Got people level 1 with 0
-Got mic level 1 with 51.296150000000004
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 62.95225000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 60.1258
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 55.238249999999994
-Got level: 1
-Changing to level 1
-Connected to ('192.168.7.18', 14964)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (3)
-Start collecting data
-Hit socket timeout with client microphone (2)
-microphone (2) has disconnected. Severing connection
-Removing client
-Got people level 1 with 0
-Got mic level 3 with 63.587349999999994
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 66.8914
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 65.3029
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 60.3976
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 63.73035
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 54.04915
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 65.58314999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 67.57925
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 69.38795000000002
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 66.36845
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 66.47104999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 4 with 73.77825
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 4 with 71.08149999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.8297
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 4 with 70.0056
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 4 with 70.06549999999999
+Got mic level 3 with 64.7388
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 68.3006
+Got mic level 4 with 66.947
 Got level: 2
 Changing to level 2
+Setting clients to True
+Creating activity levels
 Got people level 1 with 0
-Got mic level 3 with 68.48925
+Got mic level 4 with 66.947
 Got level: 2
 Changing to level 2
+got 6 mic files with 357436 data points
+Mic mean and std (62.53977560514332, 5.210291229619739)
+level: 1 is (0, 54.72433876071371)
+level: 2 is (54.72433876071371, 58.8925717444095)
+level: 3 is (58.8925717444095, 66.18697946587713)
+level: 4 is (66.18697946587713, 70.35521244957293)
+level: 5 is (70.35521244957293, 74.00241631030674)
+level: 6 is (74.00241631030674, 100000000000000)
+got 4 door files with 2429 data points
+Door mean and std (22.510498147385757, 16.91702295997803)
+level: 1 is (0, 0)
+level: 2 is (-2.8650362925812907, 10.668582075401137)
+level: 3 is (10.668582075401137, 34.352414219370374)
+level: 4 is (34.352414219370374, 47.8860325873528)
+level: 5 is (47.8860325873528, 59.72794865933743)
+level: 6 is (59.72794865933743, 100000000000000)
+Taken 2.06s
+Setting clients to False
+Saving log file
+microphone (1)'s log files is: 13-9-2021-microphone.csv
 Got people level 1 with 0
-Got mic level 3 with 65.0124
+Got mic level 4 with 66.947
 Got level: 2
 Changing to level 2
+Saving log file
+microphone (2)'s log files is: 13-9-2021-microphone.csv
 Got people level 1 with 0
-Got mic level 3 with 64.25755000000001
+Got mic level 3 with 64.46
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 65.34415
+Got mic level 3 with 65.8124
 Got level: 2
+Saving log file
+display (1)'s log files is: 13-9-2021-display.csv
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 64.58545
+Got mic level 3 with 65.8124
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 3 with 62.85695
+Got mic level 3 with 65.8124
 Got level: 2
 Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.77305
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 59.19825
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.051050000000004
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.214600000000004
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 56.888349999999996
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.69884999999999
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 54.2328
-Got level: 1
-Changing to level 1
-microphone (3) has disconnected. Severing connection
-Removing client
-Connected to ('192.168.7.18', 2614)
-Identifying new clientWaiting for a connection...
-
-Got people level 1 with 0
-Got mic level 1 with 51.833
-Got level: 1
-Changing to level 1
-Assigning name
-Adding microphone client
-Client assigned name: microphone (2)
-Start collecting data
-Got people level 1 with 0
-Got mic level 3 with 64.93719999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.16055
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.61464999999999
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 62.0239
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.15155
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.597300000000004
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 64.23599999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.026849999999996
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 65.62984999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.6909
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.185950000000005
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.1155
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 62.81855
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 62.53545
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 1 with 51.09495
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 63.28654999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 62.20075
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 59.04030000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 55.82509999999999
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 59.1684
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.19184999999999
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 63.249449999999996
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 63.950349999999986
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.38495
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.710449999999994
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 62.4456
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 65.49915
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 63.014700000000005
-Got level: 2
-Changing to level 2
-microphone (4) has disconnected. Severing connection
-Removing client
-Got people level 1 with 0
-Got mic level 3 with 65.47485
-Got level: 2
-Changing to level 2
-Connected to ('192.168.7.36', 16734)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (2)
-Start collecting data
-Got people level 1 with 0
-Got mic level 3 with 62.52985000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 1 with 52.68549999999999
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 63.1914
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 62.02374999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.8788
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.171499999999995
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 62.47914999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.35825
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 59.09805
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 56.74825
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 63.26809999999999
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 57.41015
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 60.25340000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 62.50495000000001
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.48535
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 3 with 60.25775
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.75484999999999
-Got level: 2
-Changing to level 2
-Connected to ('192.168.7.36', 15964)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (3)
-Start collecting data
-Hit socket timeout with client microphone (2)
-Got people level 1 with 0
-Got mic level 3 with 63.775200000000005
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 3 with 64.07685
-Got level: 2
-Changing to level 2
-Hit socket timeout with client microphone (2)
-Got people level 1 with 0
-Got mic level 3 with 64.19765
-Got level: 2
-Changing to level 2
-Got people level 1 with 0
-Got mic level 2 with 58.13775
-Got level: 1
-Changing to level 1
-Hit socket timeout with client microphone (2)
-Got people level 1 with 0
-Got mic level 2 with 58.5693
-Got level: 1
-Changing to level 1
-Got people level 1 with 0
-Got mic level 2 with 57.84129999999999
-Got level: 1
-Changing to level 1
-Hit socket timeout with client microphone (2)
 Got people level 1 with 0
-Got mic level 3 with 59.465599999999995
+Got mic level 3 with 65.8124
 Got level: 2
 Changing to level 2
 Got people level 1 with 0
-Got mic level 4 with 69.6747
+Got mic level 3 with 64.2207
 Got level: 2
 Changing to level 2
-Received signal 3
-Hit socket timeout with client microphone (2)
-microphone (2) has disconnected. Severing connection
-Removing client
-microphone (3) has disconnected. Severing connection
-Removing client
 Got people level 1 with 0
-Got mic level 3 with 65.74109999999999
+Got mic level 3 with 64.1231
 Got level: 2
 Changing to level 2
-microphone (2) has disconnected. Severing connection
-Removing client
-Connected to ('192.168.7.18', 30423)
-Identifying new clientWaiting for a connection...
-
-Assigning name
-Adding microphone client
-Client assigned name: microphone (1)
-Start collecting data
 Got people level 1 with 0
-Got mic level 3 with 65.51045
+Got mic level 3 with 64.7388
 Got level: 2
 Changing to level 2
