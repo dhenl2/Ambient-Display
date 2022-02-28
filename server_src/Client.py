@@ -198,14 +198,16 @@ def sensor_client(server, client):
 
 def display_client(server, client):
     # ask for new level every 2s
-    start = True
     while True:
         time.sleep(2)
         if client.pause:
             print("sending STOP")
             client.write("STOP")
             continue
-        new_level = server.activity_level.get_level()
+        if server.dev:
+            new_level = server.dev_level
+        else:
+            new_level = server.activity_level.get_level()
         client.log_to_file(new_level)
         # send inc/dec from current level to new level
         # on the first command, the initial level is 1 whether its inc/dec
