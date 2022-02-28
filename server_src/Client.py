@@ -5,6 +5,7 @@ from Server import ServerInfo
 
 directory = "/home/pi/Python/Log/"
 
+
 class Client:
     def __init__(self, con, server):
         self.sensor = ""
@@ -141,6 +142,7 @@ class Client:
             pass
         sys.exit()
 
+
 def time_to_log():
     days_to_log = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
     today = time.strftime("%A")
@@ -162,6 +164,7 @@ def identify_client(con, server):
     else:
         return None
 
+
 def add_activity_input(server: ServerInfo, client, new_input):
     if client.sensor == "microphone":
         server.add_mic_input(new_input)
@@ -172,6 +175,7 @@ def add_activity_input(server: ServerInfo, client, new_input):
             server.person_left()
         else:
             print("IDK what this is: " + new_input)
+
 
 def sensor_client(server, client):
     print("Start collecting data")
@@ -196,6 +200,7 @@ def sensor_client(server, client):
                 add_activity_input(server, client, msg)
                 client.log_to_file(msg)
 
+
 def display_client(server, client):
     # ask for new level every 2s
     while True:
@@ -213,6 +218,7 @@ def display_client(server, client):
         # on the first command, the initial level is 1 whether its inc/dec
         print(f"Changing to level {new_level}")
         client.write(str(new_level))
+
 
 def client_thread(con, server):
     client = identify_client(con, server)

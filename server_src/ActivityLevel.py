@@ -5,6 +5,7 @@ import math
 
 directory = "/home/pi/Python/Log/"
 
+
 class FixedQueue:
     def __init__(self, max_size):
         self.queue = []
@@ -14,6 +15,7 @@ class FixedQueue:
         self.queue.append(value)
         if len(self.queue) > self.max:
             self.queue.pop(0)
+
 
 class ActivityLevel:
     def __init__(self, server):
@@ -111,7 +113,6 @@ class ActivityLevel:
         record = f"{time_stamp},{level}\n"
         self.activity_log_file.write(record)
 
-
     def get_level(self):
         people_lvl = get_level_of(self.people.get_count(), self.people_levels)
         print(f"Got people level {people_lvl} with {self.people.get_count()}")
@@ -136,6 +137,7 @@ class ActivityLevel:
         new_input = float(new_input)
         self.microphones.add(new_input)
 
+
 class Person:
     def __init__(self):
         self.start_time = time.time()
@@ -144,6 +146,7 @@ class Person:
     def is_expired(self):
         delta = time.time() - self.start_time
         return delta > self.max_time
+
 
 class PeopleCounter:
     def __init__(self):
@@ -176,11 +179,13 @@ class PeopleCounter:
             self.people.pop(index)
         self.count -= len(to_remove)
 
+
 def within_bounds(value1, value2, bound):
     if (value2 - bound) <= value1 <= (value2 + bound):
         return True
     else:
         return False
+
 
 def set_levels(levels, mean, std):
     """
@@ -204,12 +209,14 @@ def set_levels(levels, mean, std):
     for key in levels.keys():
         print(f"level: {key} is {levels.get(key)}")
 
+
 def get_level_of(value, level_map):
     for key in level_map.keys():
         bounds = level_map.get(key)
         if bounds[0] <= value <= bounds[1]:
             return key
     return 1
+
 
 def get_data_from_files(files):
     data = []
@@ -227,6 +234,7 @@ def get_data_from_files(files):
                 # invalid data found
                 line = file.readline()
     return np.array(data)
+
 
 def get_data_files():
     files = os.listdir(directory)
@@ -247,6 +255,7 @@ def get_data_files():
                 mic_files = door_files = []
                 break
     return mic_files, door_files
+
 
 def time_to_log():
     days_to_log = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
