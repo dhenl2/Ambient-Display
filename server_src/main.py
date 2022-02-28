@@ -6,11 +6,19 @@ from threading import Lock, Thread
 import signal
 import time
 import os
+from pa1010d import PA1010D
+from gps_local_time import get_local_time
+import argparse
 
 directory = "/home/pi/Python/Log/"
 
+
 def run_server(server):
     sock = start_server("0.0.0.0", 8123)
+    if server.dev:
+        dev_input_thread = Thread(target=server.prompt_new_level, args=(), daemon=True)
+        server.threads.append(dev_input_thread)
+        dev_input_thread.start()
 
     while True:
         print(f"Waiting for a connection...")
@@ -20,7 +28,23 @@ def run_server(server):
         thread_id.start()
         server.threads.append(thread_id)
 
-def main():
+
+def set_local_time():
+    gps = PA1010D()
+    while True:
+        # await gps lock and date and time
+        gps.update()
+        if (gps.timestamp is not None) and (gps.datestamp is not None):
+            break
+        time.sleep(2)
+    print("GPS lock acquired")
+    current_date_time = get_local_time(gps.timestamp, gps.datestamp).isoformat(sep=" ")
+    print(f"Setting date and time to {current_date_time}")
+    os.system(f"sudo date -s'{current_date_time}'")
+    return
+
+
+def main(args):
     def stop_server(signal_no, frame):
         print("Received signal " + str(signal_no))
         server.quit_clients()
@@ -30,54 +54,9 @@ def main():
         server.activity_level.close_log_files()
         sys.exit()
 
-    def time_to_calibrate(signal_no, frame):
-        print("Received signal " + str(signal_no))
-        print("Triggered a calibration")
-        server.calibrate_now = True
-
     def routine_calibration():
-        shed_open = 7
-        shed_close = 14
-        open_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
-        def shed_closed():
-            try:
-                current_hour = int(time.strftime("%H"))
-                today = time.strftime("%A")
-            except ValueError:
-                return False
-            return current_hour > shed_close or current_hour < shed_open
-
-        def shed_is_open():
-            try:
-                current_hour = int(time.strftime("%H"))
-                today = time.strftime("%A")
-            except ValueError:
-                return False
-            return today in open_days and (shed_open <= current_hour <= shed_close)
-
-        def log_files_available():
-            return len(os.listdir(directory)) > 2
-
-        start_timer = time.time()
-        leave_on = False
         while True:
-            # if shed_closed() or not leave_on:
-            #     print(f"closing shed")
-            #     server.set_display_clients(False)
-            #     if server.activity_level.calibrate_again and log_files_available() or server.calibrate_now:
-            #         # pause all clients from adding new data
-            #         print("It's now past the shed close time. Time to calibrate")
-            #         server.set_clients_pause(True)
-            #         server.activity_level.create_activity_levels()
-            #         server.set_clients_pause(False)
-            # elif shed_is_open():
-            # print(f"Current timer: {time.time() - start_timer}")
-            # if time.time() - start_timer > 30:
-            #     print("opening shed")
-            #     server.set_display_clients(True)
-            #     leave_on = True
-            time.sleep(20)     # run this every 3hrs
+            time.sleep(60 * 10)  # run this every 3hrs
             server.set_clients_pause(True)
             server.activity_level.create_activity_levels()
             server.set_clients_pause(False)
@@ -87,14 +66,21 @@ def main():
     signal.signal(signal.SIGUSR1, routine_calibration)
 
     lock = Lock()
-    server = ServerInfo(lock)
+    server = ServerInfo(lock, args.dev)
 
-    server_thread = Thread(daemon=True, target=run_server, args=(server, ))
-    # print("Starting server thread")
+    server_thread = Thread(daemon=True, target=run_server, args=(server,))
+    set_date_time_thread = Thread(daemon=True, target=set_local_time)
+    set_date_time_thread.start()
     server_thread.start()
     routine_calibration()
 
 
+def create_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dev", required=False, help="Development mode to control display levels", action="store_true")
+    return parser
+
 
 if __name__ == "__main__":
-    main()
+    args_parser = create_args()
+    main(args_parser.parse_args())
