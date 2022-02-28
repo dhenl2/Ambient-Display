@@ -19,11 +19,13 @@ class ActivityLevel:
     def __init__(self, server):
         self.server = server
         self.people = PeopleCounter()
-        self.microphones = FixedQueue(10)
+        self.microphones = FixedQueue(5)
         self.people_levels = {}
+        # default people data
         self.people_mean = 8.742316785
         self.people_std = 11.35808511
         self.mic_levels = {}
+        # default mic data
         self.mic_mean = 59.81290416
         self.mic_std = 3.938022299
         self.calibration_file = open(directory + "activity_calibration.csv", "a")
@@ -115,11 +117,11 @@ class ActivityLevel:
         print(f"Got people level {people_lvl} with {self.people.get_count()}")
         mic_lvl = get_level_of(self.get_microphone_avg(), self.mic_levels)
         print(f"Got mic level {mic_lvl} with {self.get_microphone_avg()}")
-        if people_lvl > (mic_lvl + 1):
-            # there's a chance the people level is inaccurate so rely on mic data
-            level = mic_lvl
-        else:
-            level = math.floor((mic_lvl + people_lvl) / 2)
+        # if people_lvl > (mic_lvl + 1):
+        #     # there's a chance the people level is inaccurate so rely on mic data
+        #     level = mic_lvl
+        # else:
+        level = math.floor((mic_lvl + people_lvl) / 2)
         print(f"Got level: {level}")
         self.log_level(level)
         return level
@@ -195,10 +197,10 @@ def set_levels(levels, mean, std):
     # set bounds of each level
     levels[1] = (0, max(0, mean - (1.5 * std)))
     levels[2] = (mean - (1.5 * std), (mean - (std * 0.7)))
-    levels[3] = ((mean - (std * 0.7)), (mean + (std * 0.7)))
-    levels[4] = ((mean + (std * 0.7)), (mean + (1.5 * std)))
-    levels[5] = ((mean + (1.5 * std)), (mean + (2.2 * std)))
-    levels[6] = ((mean + (2.2 * std)), 100000000000000)
+    levels[3] = ((mean - (std * 0.7)), (mean + (std * 0.5)))
+    levels[4] = ((mean + (std * 0.5)), (mean + (1.2 * std)))
+    levels[5] = ((mean + (1.2 * std)), (mean + (1.8 * std)))
+    levels[6] = ((mean + (1.8 * std)), 100000000000000)
     for key in levels.keys():
         print(f"level: {key} is {levels.get(key)}")
 
