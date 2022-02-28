@@ -4,9 +4,11 @@ import time
 from ActivityLevel import *
 
 class ServerInfo:
-    def __init__(self, lock):
+    def __init__(self, lock, dev):
         self.count = 0
         self.lock = lock
+        self.dev = dev
+        self.dev_level = 1
         self.display_clients = list()
         self.microphone_clients = list()
         self.door_sensor_clients = list()
@@ -14,6 +16,29 @@ class ServerInfo:
         self.threads = []
         self.calibrate_now = False
         self.stop_displays = False
+
+    def dev_get_activity_level(self):
+        return self.dev_level
+
+    def prompt_new_level(self):
+
+        def prompt_error():
+            print("Incorrect level. Level must be between 1 - 6")
+
+        while True:
+            new_level = input("Set display level: ")
+            if new_level == "dev_off":
+                self.dev = False
+            try:
+                int(new_level)
+                if not (1 <= int(new_level) <= 6):
+                    prompt_error()
+                    continue
+            except ValueError:
+                prompt_error()
+                continue
+            self.dev_level = new_level
+            time.sleep(2)
 
     def quit_clients(self):
         clients = [self.display_clients, self.microphone_clients, self.door_sensor_clients]
